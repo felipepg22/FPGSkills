@@ -1,0 +1,31 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "FPGSkills agent metadata",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "id",
+    "displayName",
+    "version",
+    "description",
+    "manualInvocationOnly",
+    "defaultModel",
+    "targets"
+  ],
+  "properties": {
+    "$schema": { "type": "string" },
+    "id": { "type": "string", "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$" },
+    "displayName": { "type": "string", "minLength": 1 },
+    "version": { "type": "string", "pattern": "^\\d+\\.\\d+\\.\\d+$" },
+    "description": { "type": "string", "minLength": 1 },
+    "manualInvocationOnly": { "const": true },
+    "defaultModel": { "const": "inherit" },
+    "targets": {
+      "type": "array",
+      "uniqueItems": true,
+      "items": {
+        "enum": ["codex", "opencode", "cursor", "claude-code", "antigravity", "generic"]
+      }
+    }
+  }
+}

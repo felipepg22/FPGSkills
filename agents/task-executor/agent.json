@@ -1,0 +1,17 @@
+{
+  "$schema": "./agent.schema.json",
+  "id": "task-executor",
+  "displayName": "Task Executor",
+  "version": "1.0.0",
+  "description": "Task implementation leaf subagent. Invoke only when the user explicitly requests Task Executor and supplies an authoritative task source.",
+  "manualInvocationOnly": true,
+  "defaultModel": "inherit",
+  "targets": [
+    "codex",
+    "opencode",
+    "cursor",
+    "claude-code",
+    "antigravity",
+    "generic"
+  ]
+}

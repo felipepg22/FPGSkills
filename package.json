@@ -1,0 +1,21 @@
+{
+  "name": "fpgskills",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Portable agents and skills for AI coding tools.",
+  "workspaces": [
+    "agents/*",
+    "packages/*"
+  ],
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "build": "npm run build --workspaces --if-present",
+    "generate": "npm run generate --workspace @fpgskills/task-executor",
+    "test": "npm run test --workspace @fpgskills/task-executor",
+    "validate": "npm run validate --workspace @fpgskills/task-executor",
+    "pack:check": "npm pack --dry-run --workspace @fpgskills/task-executor"
+  },
+  "license": "MIT"
+}

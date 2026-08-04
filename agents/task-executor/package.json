@@ -1,0 +1,35 @@
+{
+  "name": "@fpgskills/task-executor",
+  "version": "1.0.0",
+  "description": "Portable leaf subagent for executing one well-specified implementation task.",
+  "type": "module",
+  "license": "MIT",
+  "engines": {
+    "node": ">=22"
+  },
+  "bin": {
+    "task-executor": "./dist/cli.js"
+  },
+  "files": [
+    "dist/",
+    "!dist/**/*.test.*",
+    "adapters/",
+    "core/",
+    "native/",
+    "agent.json",
+    "agent.schema.json",
+    "README.md",
+    "LICENSE"
+  ],
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "generate": "npm run build --silent && node dist/generate.js --write",
+    "test": "npm run build --silent && node --test \"dist/**/*.test.js\"",
+    "validate": "npm run build --silent && node dist/generate.js --check",
+    "prepack": "npm run validate"
+  },
+  "devDependencies": {
+    "@types/node": "^22.0.0",
+    "typescript": "^5.9.0"
+  }
+}

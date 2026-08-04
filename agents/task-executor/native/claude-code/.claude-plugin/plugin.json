@@ -1,0 +1,8 @@
+{
+  "name": "task-executor",
+  "version": "1.0.0",
+  "description": "Task implementation leaf subagent. Invoke only when the user explicitly requests Task Executor and supplies an authoritative task source.",
+  "author": {
+    "name": "FPGSkills contributors"
+  }
+}
