@@ -6,10 +6,10 @@ The first artifact is [Task Executor](./agents/task-executor/README.md), a manua
 
 ## Install with npx
 
-Node.js 22 or newer is required. Once the package is published to npm, run the interactive installer with:
+Node.js 22 or newer is required. Once the package is published to npm, run the guided interactive installer with:
 
 ```sh
-npx @fpgskills/task-executor install
+npx @fpgskills/task-executor
 ```
 
 For a non-interactive project installation, specify the target platform and project directory:

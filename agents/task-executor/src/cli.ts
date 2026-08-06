@@ -1,11 +1,13 @@
 #!/usr/bin/env node
 import { parseArguments } from "./arguments.js";
-import { completeInteractively } from "./interactive.js";
-import { install, status, uninstall, type OperationResult } from "./installer.js";
+import { completeInteractively, InteractiveCancellation, runInteractiveInstall } from "./interactive.js";
+import { status, uninstall, type OperationResult } from "./installer.js";
+import { stdin, stdout } from "node:process";
 
 const HELP = `Task Executor installer
 
 Usage:
+  task-executor
   task-executor install --target <target> --scope <local|global> [options]
   task-executor uninstall --scope <local|global> [--target <target>] [--force]
   task-executor status --scope <local|global> [--json]
@@ -26,31 +28,34 @@ Options:
 
 async function main(): Promise<void> {
   let args = parseArguments(process.argv.slice(2));
-  if (args.help || !args.command) {
+  if (args.help) {
     process.stdout.write(HELP);
     return;
   }
-  args = await completeInteractively(args);
-  if (!args.scope) throw new Error("--scope is required when no interactive terminal is available.");
+
+  if (!args.command) {
+    if (stdin.isTTY && stdout.isTTY) args.command = "install";
+    else {
+      process.stdout.write(HELP);
+      return;
+    }
+  }
 
   switch (args.command) {
     case "install": {
-      if (args.targets.length === 0) throw new Error("At least one --target is required.");
-      const results = await install({
-        targets: args.targets,
-        scope: args.scope,
-        project: args.project,
-        profiles: args.profiles,
-        output: args.output,
-        force: args.force,
-      });
-      printResults(results);
+      const results = await runInteractiveInstall(args);
+      if (results) printResults(results);
       break;
     }
-    case "uninstall":
+    case "uninstall": {
+      args = await completeInteractively(args);
+      if (!args.scope) throw new Error("--scope is required when no interactive terminal is available.");
       printResults(await uninstall({ targets: args.targets, scope: args.scope, project: args.project, force: args.force }));
       break;
+    }
     case "status": {
+      args = await completeInteractively(args);
+      if (!args.scope) throw new Error("--scope is required when no interactive terminal is available.");
       const entries = await status({ scope: args.scope, project: args.project });
       if (args.json) process.stdout.write(`${JSON.stringify(entries, null, 2)}\n`);
       else if (entries.length === 0) process.stdout.write("No Task Executor adapters are recorded in this scope.\n");
@@ -71,6 +76,7 @@ function printResults(results: OperationResult[]): void {
 }
 
 main().catch((error: unknown) => {
+  if (error instanceof InteractiveCancellation) return;
   process.stderr.write(`${error instanceof Error ? error.message : String(error)}\n`);
   process.exitCode = 1;
 });

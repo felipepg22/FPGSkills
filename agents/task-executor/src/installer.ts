@@ -29,6 +29,30 @@ export interface OperationResult {
   detail?: string;
 }
 
+export interface InstallationPreview {
+  target: TargetId;
+  profile: string;
+  path: string;
+}
+
+export async function previewInstall(options: InstallOptions): Promise<InstallationPreview[]> {
+  const metadata = await loadMetadata();
+  const previews: InstallationPreview[] = [];
+
+  for (const target of options.targets) {
+    const profiles: Array<ModelProfile | undefined> = target === "generic" ? [undefined] : [undefined, ...options.profiles];
+    for (const profile of profiles) {
+      previews.push({
+        target,
+        profile: profile?.name ?? "inherit",
+        path: resolveDestination(target, options, metadata.id, profile?.name),
+      });
+    }
+  }
+
+  return previews;
+}
+
 export async function install(options: InstallOptions): Promise<OperationResult[]> {
   const metadata = await loadMetadata();
   const prompt = await loadPrompt();
