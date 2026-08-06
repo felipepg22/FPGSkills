@@ -22,6 +22,6 @@ Distribution is intentionally hybrid:
 
 - Native agent/plugin packaging where a platform supports it.
 - Committed adapter files for manual installation.
-- A dependency-free Node.js CLI for local/global installation, model profiles, status, upgrades, and uninstall.
+- A Node.js CLI with a small prompt runtime for guided local/global installation, model profiles, status, upgrades, and uninstall.
 
 Platform permissions and isolation remain host-controlled. The installer never grants permissions, and Task Executor never attempts to increase its own permissions.

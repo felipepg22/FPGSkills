@@ -30,10 +30,12 @@ node agents/task-executor/dist/cli.js install --target codex --scope local
 When published, the equivalent command will be:
 
 ```sh
-npx @fpgskills/task-executor install
+npx @fpgskills/task-executor
 ```
 
-Interactive installation asks for targets, local/global scope, project root, and optional model profiles. Scripted use supplies them explicitly:
+In a terminal, the bare command opens a guided installer with keyboard-driven target selection, scope selection, optional model profiles, a destination summary, confirmation, and progress output. Detected agent directories are preselected. Ctrl+C or declining the final confirmation leaves the filesystem unchanged.
+
+For scripted or CI use, supply all required arguments explicitly:
 
 ```sh
 npx @fpgskills/task-executor install \
@@ -43,6 +45,8 @@ npx @fpgskills/task-executor install \
   --profile luna=gpt-5.6-luna \
   --profile grok=xai/grok-model-id
 ```
+
+The bare command shows help instead of prompting when stdin or stdout is not a terminal. Explicitly supplied install arguments also bypass the wizard.
 
 The base `task-executor` profile inherits the parent model. Each `--profile name=model-id` adds a definition such as `task-executor-luna`. Model identifiers are platform- and account-specific; the installer validates profile syntax but cannot validate account access. Antigravity currently documents the model tiers `inherit`, `flash`, and `pro`.
 
