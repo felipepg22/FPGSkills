@@ -2,6 +2,15 @@
   "name": "@fpgskills/fpg-agents-md-writer",
   "version": "0.1.0",
   "description": "Evidence-backed AGENTS.md authoring skill with guided cross-platform installation.",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/felipepg22/FPGSkills.git",
+    "directory": "skills/fpg-agents-md-writer"
+  },
+  "bugs": {
+    "url": "https://github.com/felipepg22/FPGSkills/issues"
+  },
+  "homepage": "https://github.com/felipepg22/FPGSkills/tree/main/skills/fpg-agents-md-writer#readme",
   "type": "module",
   "license": "MIT",
   "engines": {
@@ -13,6 +22,7 @@
   "files": [
     "SKILL.md",
     "LICENSE",
+    "README.md",
     "agents/",
     "references/",
     "dist/",
