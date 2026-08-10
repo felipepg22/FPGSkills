@@ -1,0 +1,4 @@
+interface:
+  display_name: "FPG AGENTS.md Writer"
+  short_description: "Research and write concise repository agent guidance"
+  default_prompt: "Use $fpg-agents-md-writer to research this repository and propose an evidence-backed AGENTS.md structure."

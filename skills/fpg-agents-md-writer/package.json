@@ -1,0 +1,34 @@
+{
+  "name": "@fpgskills/fpg-agents-md-writer",
+  "version": "0.1.0",
+  "description": "Evidence-backed AGENTS.md authoring skill with guided cross-platform installation.",
+  "type": "module",
+  "license": "MIT",
+  "engines": {
+    "node": ">=22"
+  },
+  "bin": {
+    "fpg-agents-md-writer": "./dist/cli.js"
+  },
+  "files": [
+    "SKILL.md",
+    "LICENSE",
+    "agents/",
+    "references/",
+    "dist/",
+    "!dist/**/*.test.*"
+  ],
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "test": "npm run build --silent && node --test \"dist/**/*.test.js\"",
+    "validate": "npm run build --silent && node dist/validate.js",
+    "prepack": "npm run validate"
+  },
+  "dependencies": {
+    "@clack/prompts": "^1.7.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.0.0",
+    "typescript": "^5.9.0"
+  }
+}

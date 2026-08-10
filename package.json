@@ -5,6 +5,7 @@
   "description": "Portable agents and skills for AI coding tools.",
   "workspaces": [
     "agents/*",
+    "skills/*",
     "packages/*"
   ],
   "engines": {
@@ -13,9 +14,9 @@
   "scripts": {
     "build": "npm run build --workspaces --if-present",
     "generate": "npm run generate --workspace @fpgskills/task-executor",
-    "test": "npm run test --workspace @fpgskills/task-executor",
-    "validate": "npm run validate --workspace @fpgskills/task-executor",
-    "pack:check": "npm pack --dry-run --workspace @fpgskills/task-executor"
+    "test": "npm run test --workspaces --if-present",
+    "validate": "npm run validate --workspaces --if-present",
+    "pack:check": "npm pack --dry-run --workspace @fpgskills/task-executor && npm pack --dry-run --workspace @fpgskills/fpg-agents-md-writer"
   },
   "license": "MIT"
 }

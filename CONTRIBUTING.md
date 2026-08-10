@@ -11,3 +11,5 @@ For Task Executor:
 5. Run the relevant manual smoke evaluations in `agents/task-executor/evals/README.md` when behavior changes.
 
 Do not edit generated adapters directly. Keep changes scoped, preserve platform-rule precedence, and update documentation when installation behavior changes.
+
+For FPG AGENTS.md Writer, edit `skills/fpg-agents-md-writer/SKILL.md` and its `references/` files directly. Run its installer tests and skill validation through the repository-wide `npm test` and `npm run validate` commands.
