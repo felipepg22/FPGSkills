@@ -6,6 +6,7 @@ The catalog currently includes:
 
 - [Task Executor](./agents/task-executor/README.md), a manually invoked leaf subagent that executes one well-specified implementation task in a fresh context.
 - [FPG AGENTS.md Writer](./skills/fpg-agents-md-writer/SKILL.md), an evidence-driven skill that audits, proposes, creates, and reorganizes concise repository instructions with task-routed supporting guidelines.
+- [Implementation Spec Writer](./skills/implementation-spec-writer/SKILL.md), a user-invoked skill that creates self-contained, agent-ready code implementation specifications from conversations and source material.
 
 ## Install with npx
 
@@ -52,6 +53,7 @@ agents/                 Reusable subagents
   task-executor/        Canonical prompt, adapters, installer, and evaluations
 skills/                 Reusable skills and their installers
   fpg-agents-md-writer/ Canonical skill, references, installer, and evaluations
+  implementation-spec-writer/ Canonical skill, references, and installer
 packages/               Reserved for proven shared tooling
 docs/                   Repository-wide architecture and contribution guidance
 ```

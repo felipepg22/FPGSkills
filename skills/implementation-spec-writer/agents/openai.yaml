@@ -1,0 +1,4 @@
+interface:
+  display_name: "Implementation Spec Writer"
+  short_description: "Create agent-ready code implementation specifications"
+  default_prompt: "Use $implementation-spec-writer to create an agent-ready implementation specification from this conversation and the supplied sources."

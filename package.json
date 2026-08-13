@@ -16,7 +16,7 @@
     "generate": "npm run generate --workspace @fpgskills/task-executor",
     "test": "npm run test --workspaces --if-present",
     "validate": "npm run validate --workspaces --if-present",
-    "pack:check": "npm pack --dry-run --workspace @fpgskills/task-executor && npm pack --dry-run --workspace @fpgskills/fpg-agents-md-writer"
+    "pack:check": "npm pack --dry-run --workspace @fpgskills/task-executor && npm pack --dry-run --workspace @fpgskills/fpg-agents-md-writer && npm pack --dry-run --workspace @fpgskills/implementation-spec-writer"
   },
   "license": "MIT"
 }
