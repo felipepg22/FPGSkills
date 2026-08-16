@@ -1,0 +1,5 @@
+interface:
+  display_name: "Performance Testing"
+  short_description: "Plan, run, and analyze local performance tests"
+  default_prompt: "Use $performance-testing to plan and run a local performance test for this application."
+

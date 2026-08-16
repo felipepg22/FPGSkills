@@ -7,6 +7,7 @@ The catalog currently includes:
 - [Task Executor](./agents/task-executor/README.md), a manually invoked leaf subagent that executes one well-specified implementation task in a fresh context.
 - [FPG AGENTS.md Writer](./skills/fpg-agents-md-writer/SKILL.md), an evidence-driven skill that audits, proposes, creates, and reorganizes concise repository instructions with task-routed supporting guidelines.
 - [Implementation Spec Writer](./skills/implementation-spec-writer/SKILL.md), a user-invoked skill that creates self-contained, agent-ready code implementation specifications from conversations and source material.
+- [Performance Testing](./skills/performance-testing/SKILL.md), a model-invoked skill that plans, generates, safely executes, analyzes, and reports local k6 tests for REST/HTTP and gRPC applications.
 
 ## Install with npx
 
@@ -44,6 +45,14 @@ npx @fpgskills/fpg-agents-md-writer install \
 
 Its installer supports the same six targets, project or global scope, managed upgrades, status, and safe uninstall. Multi-target installation keeps successful targets and reports each failed destination with a non-zero exit status.
 
+Install Performance Testing with its guided installer:
+
+```sh
+npx @fpgskills/performance-testing
+```
+
+The skill discovers evidence-backed read-only test cases, writes an approval-bound plan, and uses free local tooling to report results as Markdown, a k6 dashboard, self-hosted Grafana, or a selected combination. See the [Performance Testing guide](./skills/performance-testing/README.md) for its supported protocols and safety boundaries.
+
 The packages are publish-ready but are not yet available from the npm registry.
 
 ## Repository layout
@@ -54,6 +63,7 @@ agents/                 Reusable subagents
 skills/                 Reusable skills and their installers
   fpg-agents-md-writer/ Canonical skill, references, installer, and evaluations
   implementation-spec-writer/ Canonical skill, references, and installer
+  performance-testing/ Canonical skill, test assets, references, installer, and evaluations
 packages/               Reserved for proven shared tooling
 docs/                   Repository-wide architecture and contribution guidance
 ```
