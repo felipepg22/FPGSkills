@@ -114,21 +114,23 @@ test("profile prompts collect validated named models", async () => {
     targets: ["codex"],
     scope: "global",
     text: ["luna", "vendor/luna"],
+    efforts: ["max"],
     confirms: [true, false, true],
   });
-  let profileNames: string[] = [];
+  let profiles: unknown[] = [];
 
   await runInteractiveInstall(baseArguments(), {
     isInteractive: () => true,
     prompter: prompts,
     install: async (options) => {
-      profileNames = options.profiles.map((profile) => profile.name);
+      profiles = options.profiles;
       return [];
     },
   });
 
-  assert.deepEqual(profileNames, ["luna"]);
+  assert.deepEqual(profiles, [{ name: "luna", model: "vendor/luna", reasoningEffort: "max" }]);
   assert.match(prompts.notes[0] ?? "", /Scope: Global/);
+  assert.match(prompts.notes[0] ?? "", /Profiles: luna \(max\)/);
 });
 
 test("prompt cancellation is surfaced without invoking the installer", async () => {
@@ -177,6 +179,7 @@ interface ScriptedOptions {
   scope: InstallScope;
   text: string[];
   confirms: boolean[];
+  efforts?: Array<"none" | "low" | "medium" | "high" | "xhigh" | "max" | undefined>;
   cancelledTargets?: boolean;
 }
 
@@ -188,6 +191,7 @@ function scriptedPrompter(options: ScriptedOptions): InteractivePrompter & {
 } {
   let textIndex = 0;
   let confirmIndex = 0;
+  let effortIndex = 0;
   const state = {
     initialTargets: undefined as TargetId[] | undefined,
     summaryCount: 0,
@@ -209,6 +213,7 @@ function scriptedPrompter(options: ScriptedOptions): InteractivePrompter & {
       return options.cancelledTargets ? INTERACTIVE_CANCELLED : options.targets;
     },
     selectScope: async () => options.scope,
+    selectReasoningEffort: async () => options.efforts?.[effortIndex++],
     text: async (_promptOptions: TextPromptOptions) => options.text[textIndex++] ?? "",
     confirm: async (message: string) => {
       prompter.confirmMessages.push(message);

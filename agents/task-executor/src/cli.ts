@@ -20,6 +20,8 @@ Options:
   --scope <scope>         local or global
   --project <path>        Project root for local scope (default: current directory interactively)
   --profile <name=model>  Install an additional named model profile; repeatable
+  --profile-effort <name=level>
+                          Set a profile reasoning effort; repeatable
   --output <path>         Required destination file or directory for generic Markdown
   --force                 Overwrite conflicts or remove modified owned adapters
   --json                  JSON output for status

@@ -23,7 +23,11 @@ export interface AgentMetadata {
 export interface ModelProfile {
   name: string;
   model: string;
+  reasoningEffort?: ReasoningEffort;
 }
+
+export const REASONING_EFFORTS = ["none", "low", "medium", "high", "xhigh", "max"] as const;
+export type ReasoningEffort = (typeof REASONING_EFFORTS)[number];
 
 export interface RenderOptions {
   metadata: AgentMetadata;

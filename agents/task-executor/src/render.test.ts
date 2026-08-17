@@ -22,17 +22,21 @@ test("every adapter contains the canonical prompt and version", () => {
   }
 });
 
-test("named profiles produce native model metadata", () => {
+test("named profiles produce native model and effort metadata where supported", () => {
   const targets: TargetId[] = ["codex", "opencode", "cursor", "claude-code", "antigravity"];
   for (const target of targets) {
     const rendered = renderAdapter({
       metadata,
       prompt: "PROMPT",
       target,
-      profile: { name: "luna", model: "vendor/luna" },
+      profile: { name: "luna", model: "vendor/luna", reasoningEffort: "max" },
     });
     assert.match(rendered, /vendor\/luna/);
     assert.match(rendered, /task-executor-luna|description/);
+    if (target === "codex") assert.match(rendered, /model_reasoning_effort = "max"/);
+    if (target === "opencode") assert.match(rendered, /reasoningEffort: "max"/);
+    if (target === "cursor") assert.match(rendered, /vendor\/luna-max/);
+    if (target === "claude-code" || target === "antigravity") assert.doesNotMatch(rendered, /max/);
   }
 });
 

@@ -43,12 +43,14 @@ npx @fpgskills/task-executor install \
   --scope local \
   --project /path/to/project \
   --profile luna=gpt-5.6-luna \
-  --profile grok=xai/grok-model-id
+  --profile-effort luna=max \
+  --profile grok=grok-4.6 \
+  --profile-effort grok=high
 ```
 
 The bare command shows help instead of prompting when stdin or stdout is not a terminal. Explicitly supplied install arguments also bypass the wizard.
 
-The base `task-executor` profile inherits the parent model. Each `--profile name=model-id` adds a definition such as `task-executor-luna`. Model identifiers are platform- and account-specific; the installer validates profile syntax but cannot validate account access. Antigravity currently documents the model tiers `inherit`, `flash`, and `pro`.
+The base `task-executor` profile inherits the parent model. Each `--profile name=model-id` adds a definition such as `task-executor-luna`; pair it with `--profile-effort name=level` to set an explicit effort (`none`, `low`, `medium`, `high`, `xhigh`, or `max`). The wizard also collects the model and optional effort for each profile. Codex, OpenCode, and Cursor render effort using their native configuration; Claude Code and Antigravity preserve the selected model only. Model identifiers are platform- and account-specific; the installer validates profile syntax but cannot validate account access. Antigravity currently documents the model tiers `inherit`, `flash`, and `pro`.
 
 Use `--target generic --output <path>` for an unknown platform. The CLI never guesses a Generic Markdown destination, and the destination must remain inside the selected project or home scope.
 

@@ -1,4 +1,4 @@
-import { TARGET_IDS, type InstallScope, type ModelProfile, type TargetId } from "./types.js";
+import { REASONING_EFFORTS, TARGET_IDS, type InstallScope, type ModelProfile, type ReasoningEffort, type TargetId } from "./types.js";
 
 export type Command = "install" | "uninstall" | "status";
 
@@ -22,6 +22,7 @@ export function parseArguments(argv: string[]): CliArguments {
     json: false,
     help: false,
   };
+  const profileEfforts = new Map<string, ReasoningEffort>();
 
   const tokens = [...argv];
   const first = tokens.shift();
@@ -59,6 +60,13 @@ export function parseArguments(argv: string[]): CliArguments {
         result.profiles.push(parseProfile(value));
         break;
       }
+      case "--profile-effort": {
+        const value = inlineValue ?? requireNext(tokens, ++index, flag);
+        const [name, effort] = parseProfileEffort(value);
+        if (profileEfforts.has(name)) throw new Error(`Duplicate profile effort: ${name}`);
+        profileEfforts.set(name, effort);
+        break;
+      }
       case "--output":
         result.output = inlineValue ?? requireNext(tokens, ++index, flag);
         break;
@@ -78,6 +86,11 @@ export function parseArguments(argv: string[]): CliArguments {
   }
 
   ensureUniqueProfiles(result.profiles);
+  for (const [name, reasoningEffort] of profileEfforts) {
+    const profile = result.profiles.find((entry) => entry.name === name);
+    if (!profile) throw new Error(`Profile effort references unknown profile: ${name}`);
+    profile.reasoningEffort = reasoningEffort;
+  }
   return result;
 }
 
@@ -92,6 +105,22 @@ export function parseProfile(value: string): ModelProfile {
     throw new Error(`Invalid profile name: ${name}`);
   }
   return { name, model };
+}
+
+export function parseProfileEffort(value: string): [string, ReasoningEffort] {
+  const separator = value.indexOf("=");
+  if (separator < 1 || separator === value.length - 1) {
+    throw new Error(`Invalid profile effort ${JSON.stringify(value)}. Use name=effort.`);
+  }
+  const name = value.slice(0, separator);
+  const effort = value.slice(separator + 1);
+  if (!/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(name) || name === "inherit") {
+    throw new Error(`Invalid profile name: ${name}`);
+  }
+  if (!REASONING_EFFORTS.includes(effort as ReasoningEffort)) {
+    throw new Error(`Invalid reasoning effort: ${effort}`);
+  }
+  return [name, effort as ReasoningEffort];
 }
 
 function splitFlag(token: string): [string, string | undefined] {

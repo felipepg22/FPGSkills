@@ -17,7 +17,7 @@ import path from "node:path";
 import { isTarget, parseProfile, type CliArguments } from "./arguments.js";
 import { detectTargets } from "./paths.js";
 import { install, previewInstall, type InstallOptions, type InstallationPreview, type OperationResult } from "./installer.js";
-import { TARGET_IDS, type InstallScope, type TargetId } from "./types.js";
+import { REASONING_EFFORTS, TARGET_IDS, type InstallScope, type ReasoningEffort, type TargetId } from "./types.js";
 
 export const INTERACTIVE_CANCELLED = Symbol("interactive-cancelled");
 export type PromptResult<T> = T | typeof INTERACTIVE_CANCELLED;
@@ -47,6 +47,7 @@ export interface InteractivePrompter {
   cancel(message: string): void;
   multiselectTargets(options: TargetOption[], initialValues: TargetId[]): Promise<PromptResult<TargetId[]>>;
   selectScope(initialValue: InstallScope): Promise<PromptResult<InstallScope>>;
+  selectReasoningEffort(): Promise<PromptResult<ReasoningEffort | undefined>>;
   text(options: TextPromptOptions): Promise<PromptResult<string>>;
   confirm(message: string, initialValue: boolean): Promise<PromptResult<boolean>>;
   note(message: string, title: string): void;
@@ -208,6 +209,14 @@ function createClackPrompter(): InteractivePrompter {
       ],
       initialValue,
     }) as InstallScope | symbol),
+    selectReasoningEffort: async () => toPromptResult(await select({
+      message: "Reasoning effort",
+      options: [
+        { value: undefined, label: "Default", hint: "leave effort to the host/model" },
+        ...REASONING_EFFORTS.map((value) => ({ value, label: value })),
+      ],
+      initialValue: undefined,
+    }) as ReasoningEffort | undefined | symbol),
     text: async (options) => toPromptResult(await text({
       ...options,
       validate: options.validate ? (value) => options.validate?.(value ?? "") : undefined,
@@ -245,7 +254,8 @@ async function collectProfiles(args: CliArguments, prompter: InteractivePrompter
       }),
       prompter,
     );
-    args.profiles.push(parseProfile(`${name}=${model}`));
+    const reasoningEffort = await requiredResult<ReasoningEffort | undefined>(prompter.selectReasoningEffort(), prompter);
+    args.profiles.push({ ...parseProfile(`${name}=${model}`), ...(reasoningEffort ? { reasoningEffort } : {}) });
     addAnother = await requiredResult<boolean>(prompter.confirm("Add another profile?", false), prompter);
   }
 }
@@ -253,7 +263,9 @@ async function collectProfiles(args: CliArguments, prompter: InteractivePrompter
 function formatSummary(options: InstallOptions, previews: InstallationPreview[]): string {
   const scope = options.scope === "local" ? "Project" : "Global";
   const root = options.scope === "local" ? path.resolve(options.project ?? process.cwd()) : homedir();
-  const profiles = options.profiles.length > 0 ? options.profiles.map((profile) => profile.name).join(", ") : "inherit only";
+  const profiles = options.profiles.length > 0
+    ? options.profiles.map((profile) => `${profile.name}${profile.reasoningEffort ? ` (${profile.reasoningEffort})` : ""}`).join(", ")
+    : "inherit only";
   const files = previews.map((entry) => `  ${TARGET_LABELS[entry.target]} (${entry.profile})\n  ${entry.path}`).join("\n");
   return [
     `Scope: ${scope}`,

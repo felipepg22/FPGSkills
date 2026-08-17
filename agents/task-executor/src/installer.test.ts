@@ -17,11 +17,12 @@ test("installs base and named profiles with a project manifest", async () => {
     targets: ["codex", "claude-code"],
     scope: "local",
     project,
-    profiles: [{ name: "luna", model: "gpt-5.6-luna" }],
+    profiles: [{ name: "luna", model: "gpt-5.6-luna", reasoningEffort: "max" }],
   });
   assert.equal(results.length, 4);
   assert.match(await readFile(path.join(project, ".codex/agents/task-executor.toml"), "utf8"), /developer_instructions/);
   assert.match(await readFile(path.join(project, ".codex/agents/task-executor-luna.toml"), "utf8"), /gpt-5\.6-luna/);
+  assert.match(await readFile(path.join(project, ".codex/agents/task-executor-luna.toml"), "utf8"), /model_reasoning_effort = "max"/);
   const entries = await status({ scope: "local", project });
   assert.equal(entries.length, 4);
   assert.ok(entries.every((entry) => entry.state === "current"));

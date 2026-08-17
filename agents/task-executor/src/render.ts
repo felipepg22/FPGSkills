@@ -28,19 +28,25 @@ function renderCodex({ metadata, prompt, profile }: RenderOptions): string {
     `description = ${JSON.stringify(metadata.description)}`,
   ];
   if (profile) fields.push(`model = ${JSON.stringify(profile.model)}`);
+  if (profile?.reasoningEffort) fields.push(`model_reasoning_effort = ${JSON.stringify(profile.reasoningEffort)}`);
   fields.push(`developer_instructions = ${JSON.stringify(prompt)}`);
   return `${fields.join("\n")}\n`;
 }
 
 function renderOpenCode({ metadata, prompt, profile }: RenderOptions): string {
   const model = profile ? `\nmodel: ${yamlString(profile.model)}` : "";
-  return `---\ndescription: ${yamlString(metadata.description)}\nmode: subagent${model}\n---\n\n<!-- ${GENERATED_NOTICE} Contract version: ${metadata.version}. -->\n\n${prompt}\n`;
+  const effort = profile?.reasoningEffort ? `\nreasoningEffort: ${yamlString(profile.reasoningEffort)}` : "";
+  return `---\ndescription: ${yamlString(metadata.description)}\nmode: subagent${model}${effort}\n---\n\n<!-- ${GENERATED_NOTICE} Contract version: ${metadata.version}. -->\n\n${prompt}\n`;
 }
 
 function renderCursor({ metadata, prompt, profile }: RenderOptions): string {
   const name = profile ? `${metadata.id}-${profile.name}` : metadata.id;
-  const model = profile?.model ?? "inherit";
+  const model = profile ? cursorModel(profile) : "inherit";
   return `---\nname: ${name}\ndescription: ${yamlString(metadata.description)}\nmodel: ${yamlString(model)}\nreadonly: false\nis_background: false\n---\n\n<!-- ${GENERATED_NOTICE} Contract version: ${metadata.version}. -->\n\n${prompt}\n`;
+}
+
+function cursorModel(profile: NonNullable<RenderOptions["profile"]>): string {
+  return profile.reasoningEffort ? `${profile.model}-${profile.reasoningEffort}` : profile.model;
 }
 
 function renderClaudeCode({ metadata, prompt, profile }: RenderOptions): string {
