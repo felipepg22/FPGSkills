@@ -1,0 +1,47 @@
+{
+  "name": "@fpgskills/performance-testing",
+  "version": "0.1.0",
+  "description": "Plan, run, analyze, and report evidence-backed local REST and gRPC performance tests with k6.",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/felipepg22/FPGSkills.git",
+    "directory": "skills/performance-testing"
+  },
+  "bugs": {
+    "url": "https://github.com/felipepg22/FPGSkills/issues"
+  },
+  "homepage": "https://github.com/felipepg22/FPGSkills/tree/main/skills/performance-testing#readme",
+  "type": "module",
+  "license": "MIT",
+  "engines": {
+    "node": ">=22"
+  },
+  "bin": {
+    "performance-testing": "./dist/cli.js"
+  },
+  "files": [
+    "SKILL.md",
+    "LICENSE",
+    "README.md",
+    "agents/",
+    "assets/",
+    "evals/",
+    "references/",
+    "scripts/",
+    "dist/",
+    "!dist/**/*.test.*"
+  ],
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "test": "npm run build --silent && node --test dist/*.test.js",
+    "validate": "npm run build --silent && node dist/validate.js",
+    "prepack": "npm run validate"
+  },
+  "dependencies": {
+    "@clack/prompts": "^1.7.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.0.0",
+    "typescript": "^5.9.0"
+  }
+}

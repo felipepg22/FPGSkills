@@ -1,0 +1,64 @@
+# Use the same approved, plan/run-specific COMPOSE_PROJECT_NAME for `up` and
+# `down`. `compose down` without `--volumes` removes this project's containers
+# and network while preserving its project-scoped named volumes.
+name: ${COMPOSE_PROJECT_NAME:?Set the approved plan/run-specific Compose project name}
+
+services:
+  prometheus:
+    image: ${PROMETHEUS_IMAGE:?Set an approved, pinned Prometheus OSS image}
+    command:
+      - --config.file=/etc/prometheus/prometheus.yml
+      - --storage.tsdb.path=/prometheus
+      - --web.enable-remote-write-receiver
+    ports:
+      - 127.0.0.1:${PROMETHEUS_PORT:-9090}:9090
+    volumes:
+      - ./prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - prometheus-data:/prometheus
+    healthcheck:
+      test: ["CMD", "wget", "-q", "-O", "/dev/null", "http://127.0.0.1:9090/-/ready"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+      start_period: 5s
+    stop_grace_period: 30s
+    restart: "no"
+
+  grafana:
+    image: ${GRAFANA_IMAGE:?Set an approved, pinned Grafana OSS image}
+    depends_on:
+      prometheus:
+        condition: service_healthy
+    environment:
+      GF_SECURITY_ADMIN_USER: ${GRAFANA_ADMIN_USER:-admin}
+      GF_SECURITY_ADMIN_PASSWORD__FILE: /run/secrets/grafana-admin-password
+      GF_USERS_ALLOW_SIGN_UP: "false"
+      GF_AUTH_ANONYMOUS_ENABLED: "false"
+      GF_ANALYTICS_REPORTING_ENABLED: "false"
+      GF_ANALYTICS_CHECK_FOR_UPDATES: "false"
+      GF_NEWS_NEWS_FEED_ENABLED: "false"
+      GF_PLUGINS_CHECK_FOR_UPDATES: "false"
+    secrets:
+      - grafana-admin-password
+    ports:
+      - 127.0.0.1:${GRAFANA_PORT:-3000}:3000
+    volumes:
+      - ./provisioning:/etc/grafana/provisioning:ro
+      - ./provisioning/dashboards/k6-local.json:/etc/grafana/dashboards/k6-local.json:ro
+      - grafana-data:/var/lib/grafana
+    healthcheck:
+      test: ["CMD-SHELL", "wget -q -O /dev/null http://127.0.0.1:3000/api/health || curl -fsS http://127.0.0.1:3000/api/health >/dev/null"]
+      interval: 5s
+      timeout: 3s
+      retries: 30
+      start_period: 10s
+    stop_grace_period: 30s
+    restart: "no"
+
+volumes:
+  prometheus-data:
+  grafana-data:
+
+secrets:
+  grafana-admin-password:
+    environment: GRAFANA_ADMIN_PASSWORD
