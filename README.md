@@ -1,4 +1,15 @@
-# FPGSkills
+<div align="center">
+  <img src="assets/fpgskills-ai-collaboration.png" alt="FPGSkills collaborators working with AI assistants over coffee" width="900" />
+
+  <h1>FPGSkills</h1>
+
+  <p>
+    <img src="https://img.shields.io/badge/Node.js-22%2B-339933?logo=nodedotjs&logoColor=white" alt="Node.js 22+" />
+    <img src="https://img.shields.io/badge/TypeScript-5.9-3178C6?logo=typescript&logoColor=white" alt="TypeScript 5.9" />
+    <img src="https://img.shields.io/badge/npm-workspaces-CB3837?logo=npm&logoColor=white" alt="npm workspaces" />
+    <img src="https://img.shields.io/badge/k6-performance_testing-7D64FF?logo=k6&logoColor=white" alt="k6 performance testing" />
+  </p>
+</div>
 
 FPGSkills is a growing catalog of portable agents and skills for AI coding tools.
 

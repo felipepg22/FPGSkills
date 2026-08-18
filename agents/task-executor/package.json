@@ -1,6 +1,6 @@
 {
   "name": "@fpgskills/task-executor",
-  "version": "1.1.0",
+  "version": "1.1.1",
   "description": "Portable leaf subagent for executing one well-specified implementation task.",
   "type": "module",
   "license": "MIT",
@@ -24,7 +24,7 @@
   "scripts": {
     "build": "tsc -p tsconfig.json",
     "generate": "npm run build --silent && node dist/generate.js --write",
-    "test": "npm run build --silent && node --test \"dist/**/*.test.js\"",
+    "test": "npm run build --silent && node --test dist/*.test.js",
     "validate": "npm run build --silent && node dist/generate.js --check",
     "prepack": "npm run validate"
   },

@@ -16,7 +16,9 @@
     "generate": "npm run generate --workspace @fpgskills/task-executor",
     "test": "npm run test --workspaces --if-present",
     "validate": "npm run validate --workspaces --if-present",
-    "pack:check": "npm pack --dry-run --workspace @fpgskills/task-executor && npm pack --dry-run --workspace @fpgskills/fpg-agents-md-writer && npm pack --dry-run --workspace @fpgskills/implementation-spec-writer && npm pack --dry-run --workspace @fpgskills/performance-testing"
+    "pack:check": "npm pack --dry-run --workspace @fpgskills/task-executor && npm pack --dry-run --workspace @fpgskills/fpg-agents-md-writer && npm pack --dry-run --workspace @fpgskills/implementation-spec-writer && npm pack --dry-run --workspace @fpgskills/performance-testing",
+    "publish:task-executor": "npm run test --workspace @fpgskills/task-executor && npm publish --workspace @fpgskills/task-executor --access public",
+    "publish:implementation-spec-writer": "npm run test --workspace @fpgskills/implementation-spec-writer && npm publish --workspace @fpgskills/implementation-spec-writer --access public"
   },
   "license": "MIT"
 }
