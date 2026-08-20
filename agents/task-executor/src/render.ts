@@ -46,7 +46,9 @@ function renderCursor({ metadata, prompt, profile }: RenderOptions): string {
 }
 
 function cursorModel(profile: NonNullable<RenderOptions["profile"]>): string {
-  return profile.reasoningEffort ? `${profile.model}-${profile.reasoningEffort}` : profile.model;
+  if (!profile.reasoningEffort) return profile.model;
+  if (profile.model.includes("[")) return profile.model;
+  return `${profile.model}[effort=${profile.reasoningEffort}]`;
 }
 
 function renderClaudeCode({ metadata, prompt, profile }: RenderOptions): string {

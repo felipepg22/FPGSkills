@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.1.2 — 2026-08-18
+
+### Fixed
+
+- Cursor named profiles now render reasoning effort as `<model>[effort=<level>]` instead of a hyphenated `<model>-<level>` slug that Cursor does not honor, causing fallback to the parent model.
+
 ## 1.1.0 — 2026-08-17
 
 ### Added
