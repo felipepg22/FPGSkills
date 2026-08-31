@@ -7,6 +7,8 @@ description: Plan, generate, execute, analyze, and report local k6 performance t
 
 Produce evidence-backed local performance tests without inventing traffic, SLOs, safety, or causality.
 
+At the start of the workflow, resolve `PERFORMANCE_TESTING_SKILL_ROOT` to the absolute directory containing this `SKILL.md`. Use that root for every bundled `assets/` and `scripts/` path. Never assume an agent-specific installation directory.
+
 ## Enforce the contract
 
 - Run only against loopback addresses or repository-proven services on the local container network. Inspect effective application configuration and refuse execution when writable remote dependencies exist or cannot be ruled out.
@@ -21,8 +23,8 @@ Produce evidence-backed local performance tests without inventing traffic, SLOs,
 
 1. Read [references/discovery.md](references/discovery.md) completely. Inspect the repository, infer supported cases, and ask one compact intake round containing only decisions not already answered.
 2. Read [references/plan-and-safety.md](references/plan-and-safety.md), [references/plan-schema.md](references/plan-schema.md), [references/workloads.md](references/workloads.md), [references/execution.md](references/execution.md), [references/reporting.md](references/reporting.md), and [references/run-schema.md](references/run-schema.md) completely. Read [references/rest.md](references/rest.md) for REST/HTTP or [references/grpc.md](references/grpc.md) for gRPC.
-3. Copy the closest template from `assets/k6/`, adapt it to repository evidence, and structurally validate every generated executable. Keep generated files under `docs/performance-tests/` unless the repository already has an approved convention.
-4. Create the canonical plan JSON and deterministic Markdown rendering under `docs/performance-tests/plans/`. Include SHA-256 hashes for every generated executable. Use `scripts/validate-plan.mjs` to validate and fingerprint the JSON.
+3. Copy the closest template from `$PERFORMANCE_TESTING_SKILL_ROOT/assets/k6/`, adapt it to repository evidence, and structurally validate every generated executable. Keep generated files under `docs/performance-tests/` unless the repository already has an approved convention.
+4. Create the canonical plan JSON and deterministic Markdown rendering under `docs/performance-tests/plans/`. Include SHA-256 hashes for every generated executable. Use `$PERFORMANCE_TESTING_SKILL_ROOT/scripts/validate-plan.mjs` to validate and fingerprint the JSON.
 5. Present the case matrix, excluded operations, executable hashes, exact commands, downloads, workload, measurements, reports, cleanup, and fingerprint. Stop until the user replies with unambiguous approval tied to that fingerprint.
 6. Revalidate the plan and executable hashes, then validate locality and prerequisites. Run a one-user functional smoke test for each case. Quarantine failed cases; abort the campaign when shared setup, authentication, health, or locality fails.
 7. Execute the approved campaign. Run isolated scenarios sequentially. Add a composite whole-application scenario only when the user approved traffic weights. Write raw output to `.artifacts/` and return compact summaries from executors.

@@ -2,23 +2,24 @@
   "name": "fpgskills",
   "version": "1.0.0",
   "private": true,
+  "type": "module",
   "description": "Portable agents and skills for AI coding tools.",
   "workspaces": [
     "agents/*",
-    "skills/*",
     "packages/*"
   ],
   "engines": {
-    "node": ">=22"
+    "node": ">=22.20.0"
   },
   "scripts": {
     "build": "npm run build --workspaces --if-present",
     "generate": "npm run generate --workspace @fpgskills/task-executor",
-    "test": "npm run test --workspaces --if-present",
-    "validate": "npm run validate --workspaces --if-present",
-    "pack:check": "npm pack --dry-run --workspace @fpgskills/task-executor && npm pack --dry-run --workspace @fpgskills/fpg-agents-md-writer && npm pack --dry-run --workspace @fpgskills/implementation-spec-writer && npm pack --dry-run --workspace @fpgskills/performance-testing",
-    "publish:task-executor": "npm run test --workspace @fpgskills/task-executor && npm publish --workspace @fpgskills/task-executor --access public",
-    "publish:implementation-spec-writer": "npm run test --workspace @fpgskills/implementation-spec-writer && npm publish --workspace @fpgskills/implementation-spec-writer --access public"
+    "test": "npm run test --workspaces --if-present && node --test tests/*.test.mjs tests/performance-testing/*.test.ts",
+    "validate": "npm run validate --workspaces --if-present && node scripts/validate-skill-payload.mjs",
+    "test:skills:copy": "node scripts/smoke-skills-install.mjs copy",
+    "test:skills:symlink": "node scripts/smoke-skills-install.mjs symlink",
+    "pack:check": "npm pack --dry-run --workspace @fpgskills/task-executor",
+    "publish:task-executor": "npm run test --workspace @fpgskills/task-executor && npm publish --workspace @fpgskills/task-executor --access public"
   },
   "license": "MIT"
 }

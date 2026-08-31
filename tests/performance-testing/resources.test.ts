@@ -6,8 +6,8 @@ import { tmpdir } from "node:os";
 import path from "node:path";
 import test from "node:test";
 import { promisify } from "node:util";
-import { pathToFileURL } from "node:url";
-import { packageRoot } from "./paths.js";
+import { fileURLToPath, pathToFileURL } from "node:url";
+const packageRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../../skills/performance-testing");
 
 const execFileAsync = promisify(execFile);
 
@@ -566,3 +566,4 @@ function rawFixture(latencies: number[], requests: number, failures: number[], l
   ];
   return `${records.map((record) => JSON.stringify(record)).join("\n")}\n`;
 }
+

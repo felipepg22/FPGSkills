@@ -1,0 +1,93 @@
+name: Skills compatibility
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  payload:
+    name: Payload portability
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22.20.0
+      - run: node scripts/validate-skill-payload.mjs
+
+  pinned-copy:
+    name: Pinned CLI copy (${{ matrix.os }})
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22.20.0
+      - run: node scripts/smoke-skills-install.mjs copy
+        env:
+          SKILLS_CLI_VERSION: 1.5.23
+
+  pinned-symlink:
+    name: Pinned CLI symlink (${{ matrix.os }})
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22.20.0
+      - run: node scripts/smoke-skills-install.mjs symlink
+        env:
+          SKILLS_CLI_VERSION: 1.5.23
+
+  windows-symlink-advisory:
+    name: Windows symlink (advisory)
+    runs-on: windows-latest
+    continue-on-error: true
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22.20.0
+      - run: node scripts/smoke-skills-install.mjs symlink
+        env:
+          SKILLS_CLI_VERSION: 1.5.23
+
+  latest-cli-advisory:
+    name: Latest CLI (advisory)
+    runs-on: ubuntu-latest
+    continue-on-error: true
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22.20.0
+      - run: node scripts/smoke-skills-install.mjs copy
+        env:
+          SKILLS_CLI_VERSION: latest
+
+  bunx:
+    name: bunx pinned CLI
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22.20.0
+      - uses: oven-sh/setup-bun@v2
+      - run: node scripts/smoke-skills-install.mjs copy
+        env:
+          SKILLS_CLI_VERSION: 1.5.23
+          SKILLS_RUNNER: bunx

@@ -13,4 +13,3 @@ const server = createServer((request, response) => {
 server.listen(3000, "127.0.0.1", () => process.stdout.write("read-only fixture listening on http://127.0.0.1:3000\n"));
 
 for (const signal of ["SIGINT", "SIGTERM"]) process.on(signal, () => server.close(() => process.exit(0)));
-

@@ -29,6 +29,19 @@ test("installs base and named profiles with a project manifest", async () => {
   assert.ok(entries.every((entry) => !path.isAbsolute(entry.path)));
 });
 
+test("Cursor named profiles render effort with native bracket syntax", async () => {
+  const project = await temporaryProject();
+  await install({
+    targets: ["cursor"],
+    scope: "local",
+    project,
+    profiles: [{ name: "luna", model: "gpt-5.6-luna", reasoningEffort: "max" }],
+  });
+  const rendered = await readFile(path.join(project, ".cursor/agents/task-executor-luna.md"), "utf8");
+  assert.match(rendered, /model: "gpt-5\.6-luna\[effort=max\]"/);
+  assert.doesNotMatch(rendered, /gpt-5\.6-luna-max/);
+});
+
 test("refuses to overwrite an unowned adapter without force", async () => {
   const project = await temporaryProject();
   const destination = path.join(project, ".cursor/agents/task-executor.md");

@@ -35,9 +35,31 @@ test("named profiles produce native model and effort metadata where supported", 
     assert.match(rendered, /task-executor-luna|description/);
     if (target === "codex") assert.match(rendered, /model_reasoning_effort = "max"/);
     if (target === "opencode") assert.match(rendered, /reasoningEffort: "max"/);
-    if (target === "cursor") assert.match(rendered, /vendor\/luna-max/);
+    if (target === "cursor") assert.match(rendered, /vendor\/luna\[effort=max\]/);
     if (target === "claude-code" || target === "antigravity") assert.doesNotMatch(rendered, /max/);
   }
+});
+
+test("Cursor profiles without effort keep the model ID unchanged", () => {
+  const rendered = renderAdapter({
+    metadata,
+    prompt: "PROMPT",
+    target: "cursor",
+    profile: { name: "luna", model: "gpt-5.6-luna" },
+  });
+  assert.match(rendered, /model: "gpt-5\.6-luna"/);
+  assert.doesNotMatch(rendered, /\[effort=/);
+});
+
+test("Cursor does not wrap a model ID that already contains parameters", () => {
+  const rendered = renderAdapter({
+    metadata,
+    prompt: "PROMPT",
+    target: "cursor",
+    profile: { name: "luna", model: "gpt-5.6-luna[effort=max]", reasoningEffort: "max" },
+  });
+  assert.match(rendered, /model: "gpt-5\.6-luna\[effort=max\]"/);
+  assert.doesNotMatch(rendered, /\[effort=max\]\[effort=/);
 });
 
 test("the generic adapter has no platform metadata", () => {
