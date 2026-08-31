@@ -2,7 +2,7 @@ import { lstat, mkdir, mkdtemp, readFile, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import process from "node:process";
-import { spawnSync } from "node:child_process";
+import { spawnSkillsRunner } from "./lib/spawn-skills-runner.mjs";
 
 const repoRoot = path.resolve(process.env.SKILLS_REPO ?? process.cwd());
 const cliVersion = process.env.SKILLS_CLI_VERSION ?? "1.5.23";
@@ -31,7 +31,6 @@ try {
     }
   }
 
-  const executable = process.platform === "win32" ? `${runner}.cmd` : runner;
   const args = runner === "bunx"
     ? [`skills@${cliVersion}`]
     : ["--yes", `skills@${cliVersion}`];
@@ -46,19 +45,24 @@ try {
     ...(mode === "copy" ? ["--copy"] : []),
   );
 
-  const result = spawnSync(executable, args, {
-    cwd: installRoot,
-    encoding: "utf8",
-    env: {
-      ...process.env,
-      CI: "1",
-      DISABLE_TELEMETRY: "1",
-      DO_NOT_TRACK: "1",
+  const result = spawnSkillsRunner({
+    runner,
+    args,
+    options: {
+      cwd: installRoot,
+      encoding: "utf8",
+      env: {
+        ...process.env,
+        CI: "1",
+        DISABLE_TELEMETRY: "1",
+        DO_NOT_TRACK: "1",
+      },
     },
   });
   const output = `${result.stdout ?? ""}\n${result.stderr ?? ""}`;
   if (result.status !== 0) {
-    throw new Error(`${runner} install failed (${result.status}):\n${output}`);
+    const launchError = result.error ? `\nLaunch error: ${result.error.message}` : "";
+    throw new Error(`${runner} install failed (${result.status}):\n${output}${launchError}`);
   }
   const reportedAgentCount = Number(output.match(/Installing to all (\d+) agents/)?.[1]);
   if (reportedAgentCount !== Object.keys(agentSnapshot).length) {

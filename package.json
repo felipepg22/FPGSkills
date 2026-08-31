@@ -14,7 +14,7 @@
   "scripts": {
     "build": "npm run build --workspaces --if-present",
     "generate": "npm run generate --workspace @fpgskills/task-executor",
-    "test": "npm run test --workspaces --if-present && node --test tests/performance-testing/*.test.ts",
+    "test": "npm run test --workspaces --if-present && node --test tests/*.test.mjs tests/performance-testing/*.test.ts",
     "validate": "npm run validate --workspaces --if-present && node scripts/validate-skill-payload.mjs",
     "test:skills:copy": "node scripts/smoke-skills-install.mjs copy",
     "test:skills:symlink": "node scripts/smoke-skills-install.mjs symlink",
