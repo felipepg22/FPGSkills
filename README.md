@@ -22,27 +22,15 @@ The catalog currently includes:
 
 ## Install the skills
 
-[skills.sh](https://skills.sh/) is the primary installer for the three skills in this repository. Node.js 22.20.0 or newer is required. First inspect the tagged source and the skills it exposes:
+[skills.sh](https://skills.sh/) is the primary installer for the three skills in this repository. Node.js 22.20.0 or newer is required.
 
 ```sh
-npx skills add felipepg22/FPGSkills#v0.2.0 --list
+npx skills add felipepg22/FPGSkills
 ```
 
-Then install one or more skills into a project, naming each agent that should use them:
+The installer will guide you through choosing the skills and agents. Add `--global` for a user-level installation or `--copy` when symlinks are unavailable or undesirable.
 
-```sh
-npx skills add felipepg22/FPGSkills#v0.2.0 \
-  --skill fpg-agents-md-writer implementation-spec-writer performance-testing \
-  --agent codex
-```
-
-Project scope is the default and is recommended for reproducible team setup. Commit the generated `skills-lock.json`. Add `--global` for a user-level installation. The installer normally creates shared symlinks; add `--copy` when symlinks are unavailable or undesirable. Copy installation is the guaranteed cross-platform path, including Windows.
-
-Replace `codex` with your agent identifier or add more values after `--agent` to target multiple agents. The CLI supports every agent listed by `npx skills add --help`. `--all` is an explicit power-user option: it installs every discovered skill into every supported agent and skips confirmation. It is not the recommended default.
-
-`npx` is the canonical runner. `bunx skills ...` is an alternative only on platforms covered by the repository compatibility checks. Review the tagged source before approving an interactive installation; reserve `-y` for reviewed automation. Release verification and CI pin the CLI version even though human-facing commands track the current CLI.
-
-To upgrade, deliberately replace `v0.2.0` with the newer release tag and review the changes before installing. Do not silently track the default branch.
+Project scope is the default. Commit the generated `skills-lock.json` for reproducible team setup.
 
 Task Executor is an agent, not a skill, and retains its [separate installer and installation guide](./agents/task-executor/README.md#install-with-the-optional-cli).
 
