@@ -1,0 +1,101 @@
+name: Seed skills.sh catalog
+
+on:
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: Existing annotated release tag to seed
+        required: true
+        default: v0.2.0
+        type: string
+      expected_release_sha:
+        description: Full commit SHA the annotated tag must resolve to
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+concurrency:
+  group: seed-skills-catalog-${{ inputs.tag }}
+  cancel-in-progress: false
+
+jobs:
+  seed:
+    name: Verify tag and seed catalog
+    runs-on: ubuntu-latest
+    environment: skills-sh-release
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22.20.0
+
+      - name: Validate release tag
+        shell: bash
+        env:
+          RELEASE_TAG: ${{ inputs.tag }}
+          EXPECTED_RELEASE_SHA: ${{ inputs.expected_release_sha }}
+        run: |
+          set -euo pipefail
+          git check-ref-format "refs/tags/${RELEASE_TAG}"
+          test "${EXPECTED_RELEASE_SHA}" = "$(printf '%s' "${EXPECTED_RELEASE_SHA}" | grep -E '^[0-9a-f]{40}$')"
+          git fetch --no-tags origin main
+          git fetch origin "refs/tags/${RELEASE_TAG}:refs/tags/${RELEASE_TAG}"
+          test "$(git cat-file -t "refs/tags/${RELEASE_TAG}")" = tag
+          test "$(git rev-parse "refs/tags/${RELEASE_TAG}^{commit}")" = "${EXPECTED_RELEASE_SHA}"
+          git merge-base --is-ancestor "${EXPECTED_RELEASE_SHA}" origin/main
+
+      - name: Install tagged skills with telemetry
+        shell: bash
+        env:
+          RELEASE_TAG: ${{ inputs.tag }}
+        run: |
+          set -euo pipefail
+          test -z "${DISABLE_TELEMETRY:-}"
+          test -z "${DO_NOT_TRACK:-}"
+          install_root="${RUNNER_TEMP}/fpgskills-catalog-seed"
+          mkdir -p "${install_root}"
+          cd "${install_root}"
+          npx --yes skills@1.5.23 add "felipepg22/FPGSkills#${RELEASE_TAG}" \
+            --skill '*' \
+            --agent universal \
+            --copy \
+            -y
+          test -f .agents/skills/fpg-agents-md-writer/SKILL.md
+          test -f .agents/skills/implementation-spec-writer/SKILL.md
+          test -f .agents/skills/performance-testing/SKILL.md
+
+      - name: Wait for catalog pages
+        shell: bash
+        run: |
+          set -euo pipefail
+          skills=(
+            "fpg-agents-md-writer"
+            "implementation-spec-writer"
+            "performance-testing"
+          )
+          deadline=$((SECONDS + 900))
+          while (( SECONDS < deadline )); do
+            missing=0
+            for skill in "${skills[@]}"; do
+              page="https://skills.sh/felipepg22/fpgskills/${skill}"
+              page_file="${RUNNER_TEMP}/skills-sh-${skill}.html"
+              if ! curl --fail --silent --show-error --location --retry 2 --output "${page_file}" "${page}" \
+                || ! grep -Fq "<title>${skill} — felipepg22/fpgskills</title>" "${page_file}" \
+                || ! grep -Fq "https://www.skills.sh/felipepg22/fpgskills/${skill}" "${page_file}" \
+                || grep -Fq "isn’t available in this repository" "${page_file}" \
+                || grep -Fq '<meta name="robots" content="noindex, follow"' "${page_file}"; then
+                missing=1
+              fi
+            done
+            if (( missing == 0 )); then
+              echo "All three skills.sh catalog pages are available."
+              exit 0
+            fi
+            sleep 30
+          done
+          echo "Catalog pages were not all available within 15 minutes; rerun this workflow later." >&2
+          exit 1

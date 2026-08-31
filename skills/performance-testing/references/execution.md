@@ -4,7 +4,7 @@ Execute only the approved fingerprint and keep raw output out of the coordinatin
 
 ## Preflight
 
-1. Re-run `scripts/validate-plan.mjs` with the JSON and Markdown paths, match the approved fingerprint, verify every generated executable hash, and bind the exact approved non-secret environment values. Only declared secret values may come from the ambient environment.
+1. Resolve `PERFORMANCE_TESTING_SKILL_ROOT` to the absolute directory containing the installed `SKILL.md`. Re-run `$PERFORMANCE_TESTING_SKILL_ROOT/scripts/validate-plan.mjs` with the JSON and Markdown paths, match the approved fingerprint, verify every generated executable hash, and bind the exact approved non-secret environment values. Only declared secret values may come from the ambient environment.
 2. Confirm the application revision, dirty state, configuration profile, target, local dependencies, and tool versions still match the plan.
 3. Run `k6 version`. Use an approved installed binary or pinned local container; do not install or silently substitute versions.
 4. Create the approved `.artifacts/<run-id>/` directory and verify secret values are absent from generated files.
