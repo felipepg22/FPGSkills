@@ -49,11 +49,11 @@ export default function () {
   let started;
   let connected = false;
   try {
+    consumeBudget();
     client.connect(address, connectionOptions());
     connected = true;
     started = Date.now();
     operationRequests.add(1, metricTags);
-    consumeBudget();
     const response = client.invoke(method, JSON.parse(required("GRPC_PAYLOAD")), {
       metadata: requestMetadata(),
       tags: metricTags,

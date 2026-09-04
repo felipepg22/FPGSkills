@@ -10,8 +10,9 @@ export function createBudget(env, vuId, now) {
   const records = number("MAX_RECORDS", 0);
   const perRequest = number("MAX_RECORDS_PER_REQUEST", 0);
   const concurrency = number("MAX_CONCURRENCY", 1);
+  const attempts = env.MAX_ATTEMPTS === undefined ? 1 : number("MAX_ATTEMPTS", 1);
   const duration = number("MAX_DURATION_SECONDS", 1) * 1000;
-  const allowance = Math.floor(Math.min(requests, perRequest ? Math.floor(records / perRequest) : requests) / concurrency);
+  const allowance = Math.floor(Math.min(requests, perRequest ? Math.floor(records / perRequest) : requests) / concurrency / attempts);
   const started = now();
   let used = 0;
   return () => {
@@ -23,4 +24,11 @@ export function createBudget(env, vuId, now) {
 
 export function verifyRemoteHost(host, approvedHost) {
   if (!approvedHost || host.toLowerCase() !== approvedHost.toLowerCase()) throw new Error("Remote host differs from plan");
+}
+
+// k6 does not supply the browser/Node URL global. Accept only unambiguous HTTP authorities.
+export function httpTargetHost(value) {
+  const match = typeof value === "string" && value.match(/^https?:\/\/(\[[0-9a-fA-F:]+\]|[A-Za-z0-9_.-]+)(?::([0-9]+))?(?:[/?#][^\s\\]*)?$/);
+  if (!match || (match[2] && (Number(match[2]) < 1 || Number(match[2]) > 65535))) throw new Error("Target must be HTTP(S) with an explicit unambiguous host and no URL credentials");
+  return match[1].replace(/^\[|\]$/g, "").toLowerCase();
 }

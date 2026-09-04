@@ -44,7 +44,7 @@ export function validatePlan(plan) {
   validateSlos(plan.slos, errors);
   validateSafety(plan.safety, errors, plan.schemaVersion);
   validateEnvironmentBindings(plan.environmentBindings, plan.environmentVariables, plan, errors);
-  validateCommands(plan.commands, plan.environmentVariables, plan.environmentBindings, plan.secretEnvironmentVariables, plan.cases, plan.generatedFiles, errors);
+  validateCommands(plan.commands, plan.environmentVariables, plan.environmentBindings, plan.secretEnvironmentVariables, plan.cases, plan.generatedFiles, errors, plan.schemaVersion);
   validateArtifacts(plan.artifacts, errors);
   validateGeneratedFiles(plan.generatedFiles, plan.environmentBindings, errors);
   validateEnvironmentNames(plan.environmentVariables, "environmentVariables", errors);
@@ -107,6 +107,7 @@ export async function validatePlanFiles(plan, options = {}) {
       if (actual !== generated.sha256) errors.push(`generatedFiles[${index}] hash mismatch for ${generated.path}.`);
       const source = content.toString("utf8");
       if (generated.kind === "k6-entrypoint") {
+        if (plan.schemaVersion === 2 && (!/import\s*\{[^}]*createBudget[^}]*\}\s*from\s*["']\.\/lib\/execution-guard\.js["']/.test(source) || !/\bconsumeBudget\(\s*\)\s*;/.test(source))) errors.push(`${generated.path} must wire the execution guard before every operation.`);
         const requiredTemplateVariables = new Set([...source.matchAll(/required\(["']([A-Z_][A-Z0-9_]*)["']\)/g)].map((match) => match[1]));
         for (const bindingId of generated.bindingIds) {
           const located = findBinding(plan.environmentBindings, bindingId);
@@ -505,14 +506,15 @@ function validateBindingCoverage(bindings, plan, errors) {
   }
 }
 
-function validateCommands(commands, environmentVariables, environmentBindings, secretEnvironmentVariables, cases, generatedFiles, errors) {
+function validateCommands(commands, environmentVariables, environmentBindings, secretEnvironmentVariables, cases, generatedFiles, errors, version) {
   if (!isObject(commands)) {
     errors.push("commands must be an object.");
     return;
   }
   const declared = new Set([...(Array.isArray(environmentVariables) ? environmentVariables : []), ...(Array.isArray(secretEnvironmentVariables) ? secretEnvironmentVariables : []), "COMPUTED_PLAN_FINGERPRINT", "GENERATED_RUN_ID"]);
+  if (version === 1) declared.add("APPROVED_PLAN_FINGERPRINT");
   const secrets = new Set(Array.isArray(secretEnvironmentVariables) ? secretEnvironmentVariables : []);
-  for (const key of ["start", "smoke", "run", "report", "cleanup"]) {
+  for (const key of ["start", "smoke", "run", "report", "cleanup", ...(commands.preflight !== undefined ? ["preflight"] : [])]) {
     requireCommandList(commands, key, errors);
     if (!Array.isArray(commands[key])) continue;
     for (const command of commands[key]) {

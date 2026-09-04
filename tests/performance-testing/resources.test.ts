@@ -113,6 +113,65 @@ test("runtime guard caps cumulative requests per VU and refuses a changed remote
   assert.throws(() => verifyRemoteHost("production.example.com", "staging.example.com"), /host/);
 });
 
+test("version 2 file validation rejects a template with its budget call removed", async () => {
+  const { validatePlanFiles } = await loadValidator();
+  const temporary = await mkdtemp(path.join(tmpdir(), "performance-budget-"));
+  const plan = mutationPlan();
+  plan.generatedFiles = [];
+  for (const [asset, target] of [["http-endpoint.js", "health.js"], ["lib/reporter.js", "lib/reporter.js"], ["lib/execution-guard.js", "lib/execution-guard.js"]]) {
+    const source = (await readFile(path.join(packageRoot, "assets/k6", asset!), "utf8")).replace("  consumeBudget();", "");
+    const relative = `docs/performance-tests/k6/${target}`;
+    await mkdir(path.dirname(path.join(temporary, relative)), { recursive: true });
+    await writeFile(path.join(temporary, relative), source);
+    plan.generatedFiles.push({ path: relative, sha256: createHash("sha256").update(source).digest("hex"), kind: asset === "http-endpoint.js" ? "k6-entrypoint" : "support", bindingIds: asset === "http-endpoint.js" ? ["health-smoke", "health-baseline-r1"] : [] });
+  }
+  assert.match((await validatePlanFiles(plan, { repositoryRoot: temporary })).join("\n"), /execution guard/);
+});
+
+test("preserves legacy fingerprint sentinel compatibility", async () => {
+  const { validatePlan } = await loadValidator();
+  const plan = validPlan();
+  for (const phase of ["smoke", "run"] as const) {
+    for (const entry of plan.environmentBindings[phase]) entry.values.PLAN_FINGERPRINT = "$APPROVED_PLAN_FINGERPRINT";
+  }
+  refreshEnvironmentAndCommands(plan);
+  assert.deepEqual(validatePlan(plan), []);
+});
+
+test("a measured phase cannot multiply its budget across repeated commands", async () => {
+  const { validatePlan } = await loadValidator();
+  const plan = mutationPlan();
+  plan.executionPhases[1].commands.push(plan.executionPhases[1].commands[0]);
+  assert.match(validatePlan(plan).join("\n"), /one command/);
+});
+
+test("pre-existing mutations require structured accessible recovery evidence", async () => {
+  const { validatePlan } = await loadValidator();
+  const plan = mutationPlan();
+  plan.cases[0].mutation.ownership = "pre-existing";
+  plan.cases[0].mutation.recovery = "none";
+  assert.match(validatePlan(plan).join("\n"), /recoveryPlan/);
+  plan.cases[0].mutation.recoveryPlan = { kind: "snapshot", evidence: ["snapshot fixture-20260904"], restoreProcedure: "restore fixture snapshot with test administrator", accessible: true };
+  plan.cases[0].mutation.recovery = "restore fixture snapshot";
+  assert.deepEqual(validatePlan(plan), []);
+});
+
+test("runtime budgets reserve capacity across bounded automatic retries", async () => {
+  const { createBudget } = await import("../../skills/performance-testing/assets/k6/lib/execution-guard.js");
+  for (let attempt = 0; attempt < 2; attempt++) {
+    const consume = createBudget({ MAX_REQUESTS: "2", MAX_RECORDS: "2", MAX_RECORDS_PER_REQUEST: "1", MAX_CONCURRENCY: "1", MAX_DURATION_SECONDS: "30", MAX_ATTEMPTS: "2" }, () => 1, () => 0);
+    consume();
+    assert.throws(() => consume(), /budget/);
+  }
+});
+
+test("HTTP target parsing works without a URL global and rejects ambiguous authorities", async () => {
+  const { httpTargetHost } = await import("../../skills/performance-testing/assets/k6/lib/execution-guard.js");
+  assert.equal(httpTargetHost("https://staging.example.com:8443/fixture?a=1"), "staging.example.com");
+  assert.equal(httpTargetHost("http://[::1]:3000/health"), "::1");
+  for (const value of ["https://user:pass@staging.example.com/", "https://staging.example.com\\@other.example/", "file:///tmp/test", "https://host:99999/"]) assert.throws(() => httpTargetHost(value));
+});
+
 test("validates and fingerprints a complete safe local plan deterministically", async () => {
   const validator = await loadValidator();
   const plan: any = validPlan();

@@ -1,7 +1,7 @@
 import { check, group, sleep } from "k6";
 import http from "k6/http";
 import { Counter, Rate, Trend } from "k6/metrics";
-import { createBudget, verifyRemoteHost } from "./lib/execution-guard.js";
+import { createBudget, verifyRemoteHost, httpTargetHost } from "./lib/execution-guard.js";
 const consumeBudget = createBudget(__ENV, () => __VU, () => Date.now());
 import { buildSummaryOutputs, SUMMARY_TREND_STATS } from "./lib/reporter.js";
 
@@ -127,10 +127,7 @@ function fraction(name) {
 
 function requiredLocalHttpUrl(name) {
   const value = required(name);
-  const parsed = new URL(value);
-  if (!["http:", "https:"].includes(parsed.protocol)) throw new Error(`${name} must use HTTP or HTTPS`);
-  if (parsed.username || parsed.password) throw new Error(`${name} must not embed URL credentials`);
-  validateApprovedHost(parsed.hostname);
+  validateApprovedHost(httpTargetHost(value));
   return value.replace(/\/$/, "");
 }
 

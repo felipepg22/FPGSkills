@@ -247,7 +247,7 @@ Set `schemaVersion: 2`. Every case retains `mutatesBusinessData` and adds `mutat
 }
 ```
 
-`ownership` is `run-owned` or `pre-existing`; the latter requires recovery evidence and a separate warning. `identity` is `dedicated-test` or `local` (local mutations only). Each external effect has `destination`, `environment: "non-production"`, `billable: false`, positive integer `maxCount`, and `evidence`.
+`ownership` is `run-owned` or `pre-existing`; the latter requires a separate warning and `recoveryPlan: { kind, evidence, restoreProcedure, accessible: true }`. Its kind is `disposable-fixtures`, `snapshot`, or `backup`; evidence is a non-empty string array and restoreProcedure names the available recovery steps. The agent verifies these facts. `identity` is `dedicated-test` or `local` (local mutations only). Each external effect has `destination`, `environment: "non-production"`, `billable: false`, positive integer `maxCount`, and `evidence`.
 
 Add `safety.preconditions` (non-empty evidence-backed capacity/data assumptions) and `safety.dependencies` (possibly empty). Each dependency has `destination`, `environment` (`local` or `non-production`), boolean `writable`, `billable: false`, and `evidence`. Remote dependencies require a target-level attestation even when the target itself is local. Version 2 supersedes the legacy `remoteWritableDependenciesVerifiedAbsent` flag with this inventory.
 
@@ -258,3 +258,5 @@ Add `executionPhases`: each entry contains unique `id`, non-empty `caseIds`, `ph
 Each smoke/run binding binds `MAX_REQUESTS`, `MAX_RECORDS`, `MAX_CONCURRENCY`, and `MAX_DURATION_SECONDS` to its phase bounds, plus an evidence-backed integer `MAX_RECORDS_PER_REQUEST` (zero for read-only). Include these variables in `environmentVariables` and exact commands. Each phase's bounds must stay within its cases' disclosed limits; supervisor retries share the phase's cumulative budget. Include and hash `lib/execution-guard.js` alongside `lib/reporter.js`, and call the guard before every operation. Allow different smoke/run budgets. The guard is per process; concurrent k6 processes must not multiply a shared phase budget.
 
 `scripts/authorize-plan.mjs` is the public approval-validation boundary. See [authorization.md](authorization.md) for sidecar/request schemas, warnings, provenance checks, and partial execution. No executable interprets a fingerprint as user consent.
+
+Each smoke/run phase contains exactly one command. Map planned repetitions to distinct phases with separate disclosed budgets; show the sum for the selected campaign. If automatic retries are planned, bind `MAX_ATTEMPTS` to `bounds.retries + 1`. The guard reserves an equal fraction of request/record capacity for each attempt; the supervisor enforces the attempt count and cumulative phase duration. This limit applies only to automatic retries inside one invocation, never to the number of fresh user-requested reruns.

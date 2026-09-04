@@ -1,4 +1,6 @@
 // Version 2 execution disclosures. Approval is validated separately from plan eligibility.
+const PHASES = ["start", "preflight", "smoke", "run", "cleanup"];
+const K6_PHASES = ["smoke", "run"];
 export function validateExecutionPolicy(plan) {
   const errors = [];
   for (const candidate of plan.cases || []) {
@@ -17,6 +19,12 @@ export function validateExecutionPolicy(plan) {
     for (const name of ["effects", "evidence", "resourceTypes"]) strings(mutation[name], `${label}.mutation.${name}`, errors);
     for (const name of ["recovery", "failureResidue", "enforcement", "setup", "cleanup"]) string(mutation[name], `${label}.mutation.${name}`, errors);
     if (!["run-owned", "pre-existing"].includes(mutation.ownership)) errors.push(`${label}.mutation.ownership is invalid.`);
+    if (mutation.ownership === "pre-existing") {
+      const recovery = mutation.recoveryPlan;
+      if (!["disposable-fixtures", "snapshot", "backup"].includes(recovery?.kind) || recovery?.accessible !== true) errors.push(`${label}.mutation.recoveryPlan requires accessible disposable-fixtures, snapshot, or backup.`);
+      strings(recovery?.evidence, `${label}.mutation.recoveryPlan.evidence`, errors);
+      string(recovery?.restoreProcedure, `${label}.mutation.recoveryPlan.restoreProcedure`, errors);
+    }
     if (!["dedicated-test", "local"].includes(mutation.identity)) errors.push(`${label}.mutation.identity is invalid.`);
     if (plan.target?.locality === "remote" && mutation.identity !== "dedicated-test") errors.push(`${label}: remote mutations require a dedicated-test identity.`);
     if (mutation.destructiveSchema !== false) errors.push(`${label}: destructive schema operations are prohibited.`);
@@ -44,10 +52,11 @@ export function validateExecutionPolicy(plan) {
     string(phase.id, "executionPhases.id", errors);
     if (ids.has(phase.id)) errors.push(`Duplicate execution phase ${phase.id}.`);
     ids.add(phase.id);
-    if (!["start", "preflight", "smoke", "run", "cleanup"].includes(phase.phase)) errors.push(`Invalid execution phase ${phase.phase}.`);
+    if (!PHASES.includes(phase.phase)) errors.push(`Invalid execution phase ${phase.phase}.`);
     strings(phase.caseIds, `${phase.id}.caseIds`, errors);
     if (phase.caseIds?.some(id => !plan.cases?.some(c => c.id === id))) errors.push(`${phase.id} references unknown case.`);
     strings(phase.commands, `${phase.id}.commands`, errors);
+    if (K6_PHASES.includes(phase.phase) && phase.commands?.length !== 1) errors.push(`${phase.id} requires exactly one command; allocate repetitions to separate bounded phases.`);
     if (!Array.isArray(phase.prerequisites)) errors.push(`${phase.id}.prerequisites must be an array.`);
     bounds(phase.bounds, `${phase.id}.bounds`, errors);
     for (const id of phase.caseIds || []) {
@@ -57,7 +66,7 @@ export function validateExecutionPolicy(plan) {
     }
     for (const command of phase.commands || []) {
       if (!plan.commands?.[phase.phase]?.includes(command)) errors.push(`${phase.id} contains an unlisted command.`);
-      if (["smoke", "run"].includes(phase.phase)) {
+      if (K6_PHASES.includes(phase.phase)) {
         const index = plan.commands?.[phase.phase]?.indexOf(command);
         const binding = plan.environmentBindings?.[phase.phase]?.[index];
         if (!binding || (binding.caseId && !phase.caseIds?.includes(binding.caseId))) errors.push(`${phase.id} command is not mapped to its case.`);
@@ -65,6 +74,7 @@ export function validateExecutionPolicy(plan) {
         const keys = { MAX_REQUESTS: "requests", MAX_RECORDS: "records", MAX_CONCURRENCY: "concurrency", MAX_DURATION_SECONDS: "durationSeconds" };
         for (const [variable, field] of Object.entries(keys)) if (binding?.values?.[variable] !== String(phase.bounds?.[field])) errors.push(`${phase.id}.${variable} must bind its exact phase bound.`);
         const records = Number(binding?.values?.MAX_RECORDS_PER_REQUEST);
+        if ((phase.bounds?.retries > 0 || binding?.values?.MAX_ATTEMPTS !== undefined) && binding?.values?.MAX_ATTEMPTS !== String(phase.bounds.retries + 1)) errors.push(`${phase.id}.MAX_ATTEMPTS must reserve the cumulative budget across retries plus the initial attempt.`);
         if (!Number.isSafeInteger(records) || records < 0 || (phase.caseIds?.some(id => plan.cases?.some(c => c.id === id && c.mutatesBusinessData)) && records === 0)) errors.push(`${phase.id}.MAX_RECORDS_PER_REQUEST must bound each operation's record effects.`);
       }
     }
@@ -72,7 +82,7 @@ export function validateExecutionPolicy(plan) {
   for (const phase of phases) {
     if (phase.prerequisites?.some(id => !ids.has(id) || id === phase.id)) errors.push(`${phase.id} has unknown/self prerequisites.`);
   }
-  for (const name of ["start", "smoke", "run", "cleanup"]) {
+  for (const name of PHASES) {
     for (const command of plan.commands?.[name] || []) {
       if (phases.filter(p => p.phase === name && p.commands?.includes(command)).length !== 1) errors.push(`commands.${name} must map exactly once into executionPhases.`);
     }
