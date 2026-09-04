@@ -26,7 +26,7 @@ Offer:
 - **Quick:** one measured run after a short warm-up.
 - **Standard:** warm-up plus three measured repetitions, executed under comparable conditions.
 
-Propose conservative local values when the user lacks numbers, show them in the plan, and obtain fingerprinted approval. Include ramp-up, steady state, ramp-down, hard maximum duration, and stream termination.
+Propose conservative local values when the user lacks numbers, show them in the plan, and obtain plain-language plan approval. Include ramp-up, steady state, ramp-down, hard maximum duration, and stream termination.
 
 ## Define safety stops
 

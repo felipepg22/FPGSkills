@@ -1,6 +1,8 @@
 import { check } from "k6";
 import http from "k6/http";
 import { Counter, Rate, Trend } from "k6/metrics";
+import { createBudget, verifyRemoteHost } from "./lib/execution-guard.js";
+const consumeBudget = createBudget(__ENV, () => __VU, () => Date.now());
 import { buildSummaryOutputs, SUMMARY_TREND_STATS } from "./lib/reporter.js";
 
 const planId = required("PLAN_ID");
@@ -35,8 +37,10 @@ export const options = {
 };
 
 export default function () {
+  consumeBudget();
   const metricTags = tags();
   const response = http.request(method, target, body, {
+    redirects: 0,
     headers: authorizationHeaders(),
     tags: metricTags,
   });
@@ -129,6 +133,7 @@ function requiredLocalHttpUrl(name) {
 function validateApprovedHost(hostname) {
   const host = hostname.replace(/^\[|\]$/g, "").toLowerCase();
   const locality = required("TARGET_LOCALITY");
+  if (locality === "remote") return verifyRemoteHost(host, required("APPROVED_REMOTE_HOST"));
   if (locality === "loopback") {
     if (!(host === "localhost" || host === "::1" || isLoopbackIpv4(host))) throw new Error("TARGET_URL does not match approved loopback locality");
     return;

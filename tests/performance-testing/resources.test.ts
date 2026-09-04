@@ -13,6 +13,106 @@ const execFileAsync = promisify(execFile);
 
 type Plan = ReturnType<typeof validPlan>;
 
+test("version 2 accepts a bounded mutation with disclosed recovery and phases", async () => {
+  const { validatePlan } = await loadValidator();
+  assert.deepEqual(validatePlan(mutationPlan()), []);
+});
+
+function mutationPlan(): any {
+  const plan: any = validPlan();
+  plan.schemaVersion = 2;
+  plan.cases[0].mutatesBusinessData = true;
+  plan.cases[0].mutation = {
+    effects: ["create fixture"], evidence: ["handler creates at most one record"],
+    resourceTypes: ["fixture"], ownership: "run-owned", recovery: "delete run-marked fixtures",
+    failureResidue: "up to 30 fixtures", identity: "dedicated-test",
+    bounds: { requests: 30, records: 30, concurrency: 1, durationSeconds: 30, retries: 0 },
+    enforcement: "supervisor caps requests; handler creates one record per request",
+    externalEffects: [], destructiveSchema: false,
+    setup: "none", cleanup: "delete only run-marked fixtures",
+  };
+  plan.safety.dependencies = [];
+  plan.safety.preconditions = ["fixture capacity for 30 records"];
+  for (const entry of [...plan.environmentBindings.smoke, ...plan.environmentBindings.run]) Object.assign(entry.values, {
+    MAX_REQUESTS: "30", MAX_RECORDS: "30", MAX_RECORDS_PER_REQUEST: "1", MAX_CONCURRENCY: "1", MAX_DURATION_SECONDS: "30",
+  });
+  refreshEnvironmentAndCommands(plan);
+  plan.executionPhases = [
+    { id: "health-smoke", caseIds: ["health"], phase: "smoke", commands: plan.commands.smoke, prerequisites: [], bounds: plan.cases[0].mutation.bounds },
+    { id: "health-run", caseIds: ["health"], phase: "run", commands: plan.commands.run, prerequisites: [], bounds: plan.cases[0].mutation.bounds },
+    { id: "health-cleanup", caseIds: ["health"], phase: "cleanup", commands: plan.commands.cleanup, prerequisites: [], bounds: plan.cases[0].mutation.bounds },
+    { id: "start", caseIds: ["health"], phase: "start", commands: plan.commands.start, prerequisites: [], bounds: plan.cases[0].mutation.bounds },
+  ];
+  return plan;
+}
+
+test("rejects unbound budgets, unlisted phase commands, and prerequisite cycles", async () => {
+  const { validatePlan } = await loadValidator();
+  const plan = mutationPlan();
+  plan.environmentBindings.run[0].values.MAX_REQUESTS = "300";
+  plan.executionPhases[0].commands = ["curl https://unlisted.example.com"];
+  plan.executionPhases[0].prerequisites = ["health-run"];
+  plan.executionPhases[1].prerequisites = ["health-smoke"];
+  const errors = validatePlan(plan).join("\n");
+  assert.match(errors, /MAX_REQUESTS/);
+  assert.match(errors, /unlisted/);
+  assert.match(errors, /cycle/);
+});
+
+test("remote non-production plans require attestation and reject production dependencies", async () => {
+  const { validatePlan } = await loadValidator();
+  const plan = mutationPlan();
+  Object.assign(plan.target, { locality: "remote", environment: "non-production", address: "https://staging.example.com/health", attestation: "Owner confirms non-production and authority to test", contradictoryEvidence: [] });
+  plan.safety.remoteWritableDependenciesVerifiedAbsent = false;
+  plan.safety.dependencies = [{ destination: "db.staging.example.com", environment: "non-production", writable: true, evidence: "deployment config", billable: false }];
+  for (const entry of [...plan.environmentBindings.smoke, ...plan.environmentBindings.run]) {
+    entry.values.TARGET_LOCALITY = "remote";
+    entry.values.TARGET_URL = plan.target.address;
+    entry.values.APPROVED_REMOTE_HOST = "staging.example.com";
+  }
+  refreshEnvironmentAndCommands(plan);
+  plan.executionPhases[0].commands = plan.commands.smoke;
+  plan.executionPhases[1].commands = plan.commands.run;
+  assert.deepEqual(validatePlan(plan), []);
+  plan.safety.dependencies[0].environment = "production";
+  assert.match(validatePlan(plan).join("\n"), /non-production/);
+  delete plan.target.attestation;
+  assert.match(validatePlan(plan).join("\n"), /attestation/);
+});
+
+test("partial authorization permits unlimited requested reruns, but blocks drift and unapproved cleanup", async () => {
+  const { safetyDigest, validateAuthorization, executionEvidence } = await import("../../skills/performance-testing/scripts/authorize-plan.mjs");
+  const plan = mutationPlan();
+  const approval = {
+    schemaVersion: 1, planId: plan.id, safetyDigest: safetyDigest(plan), approvedAt: "2026-09-04T12:00:00Z",
+    approvedPhaseIds: ["health-smoke"], acknowledgedWarnings: ["mutation:health"],
+    summary: "Run the smoke case only; acknowledge creation of fixtures", revoked: false,
+  };
+  const request = { userRequested: true, phaseIds: ["health-smoke"], evidence: executionEvidence(plan) };
+  for (let n = 0; n < 3; n++) assert.deepEqual(validateAuthorization(plan, approval, request), []);
+  assert.match(validateAuthorization(plan, approval, { ...request, userRequested: false }).join("\n"), /user request/);
+  assert.match(validateAuthorization(plan, approval, { ...request, phaseIds: ["health-cleanup"] }).join("\n"), /not approved/);
+  const changed = structuredClone(plan);
+  changed.reports = ["local-dashboard"];
+  assert.equal(safetyDigest(changed), approval.safetyDigest);
+  changed.application.revision = "f".repeat(40);
+  assert.match(validateAuthorization(changed, approval, request).join("\n"), /changed/);
+  assert.match(validateAuthorization(plan, { ...approval, revoked: true }, request).join("\n"), /revoked/);
+});
+
+test("runtime guard caps cumulative requests per VU and refuses a changed remote host", async () => {
+  const { createBudget, verifyRemoteHost } = await import("../../skills/performance-testing/assets/k6/lib/execution-guard.js");
+  const env = { MAX_REQUESTS: "4", MAX_RECORDS: "4", MAX_RECORDS_PER_REQUEST: "1", MAX_CONCURRENCY: "2", MAX_DURATION_SECONDS: "30" };
+  for (const vu of [1, 2]) {
+    const consume = createBudget(env, () => vu, () => 0);
+    consume(); consume();
+    assert.throws(() => consume(), /budget/);
+  }
+  assert.throws(() => createBudget(env, () => 3, () => 0)(), /concurrency/);
+  verifyRemoteHost("staging.example.com", "staging.example.com");
+  assert.throws(() => verifyRemoteHost("production.example.com", "staging.example.com"), /host/);
+});
+
 test("validates and fingerprints a complete safe local plan deterministically", async () => {
   const validator = await loadValidator();
   const plan: any = validPlan();
@@ -132,6 +232,10 @@ test("verifies hashes, binding-scoped requirements, safety wiring, and Markdown 
   const plan = validPlan();
   plan.generatedFiles[0]!.sha256 = createHash("sha256").update(source).digest("hex");
   plan.generatedFiles.push({ path: helperPath, sha256: createHash("sha256").update(helper).digest("hex"), kind: "support", bindingIds: [] });
+  const guard = await readFile(path.join(packageRoot, "assets/k6/lib/execution-guard.js"));
+  const guardPath = "docs/performance-tests/k6/lib/execution-guard.js";
+  await writeFile(path.join(temporary, guardPath), guard);
+  plan.generatedFiles.push({ path: guardPath, sha256: createHash("sha256").update(guard).digest("hex"), kind: "support", bindingIds: [] });
   plan.application.configurationEvidence.push("literal ``` injection attempt");
   const markdownFile = path.join(temporary, "plan.md");
   const markdown = validator.renderPlanMarkdown(plan);
@@ -170,7 +274,7 @@ test("keeps endpoint and journey requirements isolated in a whole-application pl
   for (const generated of plan.generatedFiles) {
     const absolute = path.join(temporary, generated.path);
     await mkdir(path.dirname(absolute), { recursive: true });
-    const asset = generated.kind === "support" ? "lib/reporter.js" : generated.path.endsWith("journey.js") ? "http-journey.js" : "http-endpoint.js";
+    const asset = generated.kind === "support" ? `lib/${path.basename(generated.path)}` : generated.path.endsWith("journey.js") ? "http-journey.js" : "http-endpoint.js";
     const source = await readFile(path.join(packageRoot, "assets/k6", asset));
     await writeFile(absolute, source);
     generated.sha256 = createHash("sha256").update(source).digest("hex");
@@ -349,7 +453,7 @@ async function loadRunReporter() {
 function validPlan() {
   const smokeValues: Record<string, string> = {
     PLAN_ID: "health-baseline",
-    PLAN_FINGERPRINT: "$APPROVED_PLAN_FINGERPRINT",
+    PLAN_FINGERPRINT: "$COMPUTED_PLAN_FINGERPRINT",
     RUN_ID: "$GENERATED_RUN_ID",
     CASE_ID: "health",
     SCENARIO_NAME: "smoke",
@@ -487,6 +591,7 @@ function wholeApplicationPlan() {
     { ...plan.generatedFiles[0], bindingIds: ["health-smoke", "health-baseline-r1"] },
     { path: "docs/performance-tests/k6/journey.js", sha256: "0".repeat(64), kind: "k6-entrypoint", bindingIds: ["browse-smoke", "browse-baseline-r1"] },
     { path: "docs/performance-tests/k6/lib/reporter.js", sha256: "0".repeat(64), kind: "support", bindingIds: [] },
+    { path: "docs/performance-tests/k6/lib/execution-guard.js", sha256: "0".repeat(64), kind: "support", bindingIds: [] },
   ];
   refreshEnvironmentAndCommands(plan);
   return plan;
@@ -504,7 +609,7 @@ function refreshEnvironmentAndCommands(plan: any) {
 
 function bindingCommand(values: Record<string, string>, script: string) {
   const assignments = Object.entries(values).map(([name, value]) => {
-    if (value === "$APPROVED_PLAN_FINGERPRINT" || value === "$GENERATED_RUN_ID") return `${name}=${value}`;
+    if (value === "$COMPUTED_PLAN_FINGERPRINT" || value === "$GENERATED_RUN_ID") return `${name}=${value}`;
     return `${name}='${value.replaceAll("'", "'\\''")}'`;
   });
   return `env ${assignments.join(" ")} k6 run docs/performance-tests/k6/${script}`;
@@ -566,4 +671,3 @@ function rawFixture(latencies: number[], requests: number, failures: number[], l
   ];
   return `${records.map((record) => JSON.stringify(record)).join("\n")}\n`;
 }
-

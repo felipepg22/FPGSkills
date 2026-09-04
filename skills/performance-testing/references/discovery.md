@@ -5,8 +5,8 @@ Complete discovery before asking the user for facts the repository can provide.
 ## Establish the boundary
 
 - Offer exactly three target scopes: one endpoint/RPC, one protocol-level user journey, or the whole application.
-- Support REST/HTTP and gRPC in version 1. Defer GraphQL to version 2; treat browser rendering, mobile, desktop, queues, production, remote targets, security tests, and code-level microbenchmarks as out of scope.
-- Interpret a user journey as a correlated sequence of read-only HTTP requests or RPCs with authentication, extracted values, checks, and optional think time. Browser clicks and browser-experience metrics belong elsewhere.
+- Support REST/HTTP and gRPC; treat GraphQL, browser rendering, mobile, desktop, direct queue testing, production, security tests, and code-level microbenchmarks as out of scope. Remote non-production targets require explicit approval.
+- Interpret a user journey as a correlated sequence of HTTP requests or RPCs with authentication, extracted values, checks, and optional think time. Include requested mutating steps with their effects disclosed. Browser clicks and browser-experience metrics belong elsewhere.
 
 ## Inspect evidence
 
@@ -28,14 +28,14 @@ For every candidate, record:
 - Stable case identifier and protocol.
 - Endpoint, RPC, or ordered journey steps.
 - Repository evidence with file paths and symbols.
-- Read-only evidence and confidence.
+- Effect evidence and confidence, including mutations and maximum side effects.
 - Required authentication reference and safe test data.
 - Expected functional checks.
 - Candidate workload scenarios and rationale.
 - Measurements supported by existing instrumentation.
 - Unknowns that prevent safe generation or execution.
 
-Exclude candidates with mutation evidence or ambiguous side effects. Keep excluded candidates visible outside the executable matrix with the evidence and reason.
+Include all explicitly requested coverage, including mutations. Keep hard-prohibited or insufficiently bounded candidates visible as blocked/excluded with evidence and reason. Obtain missing decisions rather than silently truncating journeys.
 
 For whole-application scope, propose roughly five to ten cases ranked by business criticality, observed usage in tests/clients, fan-out, data intensity, and dependency sensitivity. Prefer a representative portfolio over exhaustive route enumeration.
 
@@ -51,4 +51,4 @@ Do not repeat facts already supplied in the conversation. Ask together for only 
 - Authentication environment-variable names and safe existing test data.
 - Streaming timing and termination semantics when gRPC streaming applies.
 
-Complete discovery when every selected and excluded case has evidence, the local application boundary is understood, missing decisions have answers, and no candidate silently depends on mutation or a remote writable service.
+Complete discovery when every selected and excluded case has evidence, application and dependency boundaries are understood, missing decisions have answers, and mutations and remote dependencies are disclosed.
