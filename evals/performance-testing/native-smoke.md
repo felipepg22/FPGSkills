@@ -5,7 +5,7 @@ Run this procedure on each claimed native platform after package tests pass. It 
 ## Common preparation
 
 1. Record `node --version` and `k6 version`; require Node.js 22 or newer and an already approved k6 installation.
-2. Create and explicitly approve a disposable local evaluation plan. Generate its Markdown and use its real fingerprint below; do not use a dummy approval value.
+2. Create and explicitly approve a disposable local evaluation plan in natural language. Generate its Markdown and use its computed fingerprint below solely for provenance. For version 2, also bind the five MAX_* execution-guard variables from the approved phase bounds.
 3. Start `node evals/fixtures/read-only-server.mjs` from the package root and record its PID.
 4. Verify `http://127.0.0.1:3000/health` returns `{"status":"ok"}` and that a POST returns 405.
 

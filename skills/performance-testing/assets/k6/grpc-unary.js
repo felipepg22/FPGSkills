@@ -1,6 +1,8 @@
 import { check } from "k6";
 import { Client, StatusOK } from "k6/net/grpc";
 import { Counter, Rate, Trend } from "k6/metrics";
+import { createBudget, verifyRemoteHost } from "./lib/execution-guard.js";
+const consumeBudget = createBudget(__ENV, () => __VU, () => Date.now());
 import { buildSummaryOutputs, SUMMARY_TREND_STATS } from "./lib/reporter.js";
 
 const planId = required("PLAN_ID");
@@ -47,6 +49,7 @@ export default function () {
   let started;
   let connected = false;
   try {
+    consumeBudget();
     client.connect(address, connectionOptions());
     connected = true;
     started = Date.now();
@@ -158,6 +161,7 @@ function requiredLocalGrpcAddress(name) {
 function validateApprovedHost(hostname) {
   const host = hostname.toLowerCase();
   const locality = required("TARGET_LOCALITY");
+  if (locality === "remote") return verifyRemoteHost(host, required("APPROVED_REMOTE_HOST"));
   if (locality === "loopback") {
     if (!(host === "localhost" || host === "::1" || isLoopbackIpv4(host))) throw new Error("GRPC_ADDRESS does not match approved loopback locality");
     return;

@@ -24,7 +24,7 @@ For Performance Testing, edit `skills/performance-testing/SKILL.md`, its
 task-loaded `references/`, reusable `assets/`, and deterministic `scripts/`
 directly. Keep generated test artifacts under the target repository's
 `docs/performance-tests/` directory, preserve the explicit plan-approval gate,
-and do not weaken the local-only or mutation-exclusion rules. Use the cases in
+and enforce the disclosed mutation bounds and approved non-production scope. Use the cases in
 `evals/performance-testing/` when behavior changes.
 
 Every directory directly under `skills/` is the payload users install. Keep

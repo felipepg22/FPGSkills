@@ -3,6 +3,7 @@ import { createHash } from "node:crypto";
 import { readFile, realpath } from "node:fs/promises";
 import path from "node:path";
 import { pathToFileURL } from "node:url";
+import { validateExecutionPolicy } from "./execution-policy.mjs";
 
 const TARGET_TYPES = new Set(["endpoint", "journey", "whole-application"]);
 const PROTOCOLS = new Set(["http", "grpc"]);
@@ -16,14 +17,15 @@ export function validatePlan(plan) {
   const errors = [];
   if (!isObject(plan)) return ["Plan must be a JSON object."];
   rejectNonJson(plan, errors);
-  if (plan.schemaVersion !== 1) errors.push("schemaVersion must be 1.");
+  if (![1, 2].includes(plan.schemaVersion)) errors.push("schemaVersion must be 1 or 2.");
   requireString(plan, "id", errors);
   if (!TARGET_TYPES.has(plan.targetType)) errors.push("targetType must be endpoint, journey, or whole-application.");
   if (!PROTOCOLS.has(plan.protocol)) errors.push("protocol must be http or grpc; GraphQL is not supported in version 1.");
 
-  validateTarget(plan.target, plan.protocol, errors);
+  validateTarget(plan.target, plan.protocol, errors, plan.schemaVersion);
   validateApplication(plan.application, errors);
-  validateCases(plan.cases, plan.secretEnvironmentVariables, errors);
+  validateCases(plan.cases, plan.secretEnvironmentVariables, errors, plan.schemaVersion);
+  if (plan.schemaVersion === 2) errors.push(...validateExecutionPolicy(plan));
   validateExcludedOperations(plan.excludedOperations, errors);
   validateWorkload(plan.workload, errors);
 
@@ -40,9 +42,9 @@ export function validatePlan(plan) {
   }
 
   validateSlos(plan.slos, errors);
-  validateSafety(plan.safety, errors);
+  validateSafety(plan.safety, errors, plan.schemaVersion);
   validateEnvironmentBindings(plan.environmentBindings, plan.environmentVariables, plan, errors);
-  validateCommands(plan.commands, plan.environmentVariables, plan.environmentBindings, plan.secretEnvironmentVariables, plan.cases, plan.generatedFiles, errors);
+  validateCommands(plan.commands, plan.environmentVariables, plan.environmentBindings, plan.secretEnvironmentVariables, plan.cases, plan.generatedFiles, errors, plan.schemaVersion);
   validateArtifacts(plan.artifacts, errors);
   validateGeneratedFiles(plan.generatedFiles, plan.environmentBindings, errors);
   validateEnvironmentNames(plan.environmentVariables, "environmentVariables", errors);
@@ -105,6 +107,7 @@ export async function validatePlanFiles(plan, options = {}) {
       if (actual !== generated.sha256) errors.push(`generatedFiles[${index}] hash mismatch for ${generated.path}.`);
       const source = content.toString("utf8");
       if (generated.kind === "k6-entrypoint") {
+        if (plan.schemaVersion === 2 && (!/import\s*\{[^}]*createBudget[^}]*\}\s*from\s*["']\.\/lib\/execution-guard\.js["']/.test(source) || !/\bconsumeBudget\(\s*\)\s*;/.test(source))) errors.push(`${generated.path} must wire the execution guard before every operation.`);
         const requiredTemplateVariables = new Set([...source.matchAll(/required\(["']([A-Z_][A-Z0-9_]*)["']\)/g)].map((match) => match[1]));
         for (const bindingId of generated.bindingIds) {
           const located = findBinding(plan.environmentBindings, bindingId);
@@ -147,20 +150,26 @@ function validateGeneratedBindingVariables(requiredTemplateVariables, located, p
     ? plan.secretEnvironmentVariables
     : candidate?.secretEnvironmentVariables || [];
   const declaredVariables = new Set([...Object.keys(values), ...applicableSecrets]);
-  const conditional = new Set(["APPROVED_CONTAINER_HOST", "HTTP_BODY", "GRPC_IMPORT_PATHS", "AUTH_TOKEN"]);
+  const conditional = new Set(["APPROVED_CONTAINER_HOST", "APPROVED_REMOTE_HOST", "HTTP_BODY", "GRPC_IMPORT_PATHS", "AUTH_TOKEN"]);
   for (const name of requiredTemplateVariables) if (!conditional.has(name) && !declaredVariables.has(name)) errors.push(`Generated tests require environmentBindings.${phase}[${index}].values.${name}.`);
   if (values.TARGET_LOCALITY === "container" && !values.APPROVED_CONTAINER_HOST) errors.push(`environmentBindings.${phase}[${index}].values.APPROVED_CONTAINER_HOST is required for container targets.`);
   if (values.HTTP_METHOD && !["GET", "HEAD", "OPTIONS"].includes(values.HTTP_METHOD) && !values.HTTP_BODY) errors.push(`environmentBindings.${phase}[${index}].values.HTTP_BODY is required for ${values.HTTP_METHOD}.`);
   if (values.GRPC_REFLECTION === "false" && !values.GRPC_PROTOSET && (!values.GRPC_PROTO || !values.GRPC_IMPORT_PATHS)) errors.push(`environmentBindings.${phase}[${index}].values must bind GRPC_PROTOSET or GRPC_PROTO with GRPC_IMPORT_PATHS when reflection is disabled.`);
 }
 
-function validateTarget(target, protocol, errors) {
+function validateTarget(target, protocol, errors, version) {
   if (!isObject(target)) {
     errors.push("target must be an object.");
     return;
   }
-  if (target.environment !== "local") errors.push("target.environment must be local.");
-  if (target.locality !== "loopback" && target.locality !== "container") errors.push("target.locality must be loopback or container.");
+  const remote = version === 2 && target.locality === "remote";
+  if (target.environment !== (remote ? "non-production" : "local")) errors.push("target.environment must be local or, for remote targets, non-production.");
+  if (!remote && target.locality !== "loopback" && target.locality !== "container") errors.push("target.locality must be loopback or container (or remote in version 2).");
+  if (remote) {
+    requireString(target, "attestation", errors, "target.attestation");
+    if (!Array.isArray(target.contradictoryEvidence) || target.contradictoryEvidence.length) errors.push("target.contradictoryEvidence must be empty; production evidence blocks execution.");
+    if (!addressHost(target.address, protocol) || classifyAddress(target.address, protocol) === "invalid") errors.push("Remote target must have a valid address.");
+  }
   requireString(target, "address", errors, "target.address");
   requireNonEmptyStringArray(target, "localityEvidence", errors, "target.localityEvidence");
   if (typeof target.address === "string" && PROTOCOLS.has(protocol)) {
@@ -205,7 +214,7 @@ function validateApplication(application, errors) {
   requireNonEmptyStringArray(application, "configurationEvidence", errors, "application.configurationEvidence");
 }
 
-function validateCases(cases, planSecretEnvironmentVariables, errors) {
+function validateCases(cases, planSecretEnvironmentVariables, errors, version) {
   if (!Array.isArray(cases) || cases.length === 0) {
     errors.push("cases must be a non-empty array.");
     return;
@@ -219,8 +228,8 @@ function validateCases(cases, planSecretEnvironmentVariables, errors) {
     requireString(candidate, "id", errors, `cases[${index}].id`);
     requireString(candidate, "operation", errors, `cases[${index}].operation`);
     if (typeof candidate.id === "string") ids.push(candidate.id);
-    if (candidate.mutatesBusinessData !== false) errors.push(`cases[${index}].mutatesBusinessData must be false.`);
-    requireNonEmptyStringArray(candidate, "readOnlyEvidence", errors, `cases[${index}].readOnlyEvidence`);
+    if (version !== 2 && candidate.mutatesBusinessData !== false) errors.push(`cases[${index}].mutatesBusinessData must be false.`);
+    if (candidate.mutatesBusinessData !== true) requireNonEmptyStringArray(candidate, "readOnlyEvidence", errors, `cases[${index}].readOnlyEvidence`);
     requireNonEmptyStringArray(candidate, "functionalChecks", errors, `cases[${index}].functionalChecks`);
     requireStringArray(candidate, "testDataRefs", errors, `cases[${index}].testDataRefs`);
     validateEnvironmentNames(candidate.secretEnvironmentVariables, `cases[${index}].secretEnvironmentVariables`, errors);
@@ -302,12 +311,12 @@ function validateSlos(slos, errors) {
   }
 }
 
-function validateSafety(safety, errors) {
+function validateSafety(safety, errors, version) {
   if (!isObject(safety)) {
     errors.push("safety must be an object.");
     return;
   }
-  if (safety.remoteWritableDependenciesVerifiedAbsent !== true) errors.push("safety.remoteWritableDependenciesVerifiedAbsent must be true.");
+  if (version !== 2 && safety.remoteWritableDependenciesVerifiedAbsent !== true) errors.push("safety.remoteWritableDependenciesVerifiedAbsent must be true.");
   requireNonEmptyStringArray(safety, "effectiveConfigurationEvidence", errors, "safety.effectiveConfigurationEvidence");
   requireStringArray(safety, "expectedSideEffects", errors, "safety.expectedSideEffects");
   if (!Array.isArray(safety.stops) || safety.stops.length === 0) {
@@ -358,10 +367,10 @@ function validateEnvironmentBindings(bindings, environmentVariables, plan, error
         union.add(name);
         if (!declared.includes(name)) errors.push(`environmentBindings.${phase}[${index}].values contains undeclared variable ${name}.`);
         if (typeof value !== "string" || !value.length || /[\r\n\0]/.test(value)) errors.push(`environmentBindings.${phase}[${index}].values.${name} must be an exact non-empty single-line string.`);
-        if (value?.startsWith("$") && !((name === "PLAN_FINGERPRINT" && value === "$APPROVED_PLAN_FINGERPRINT") || (name === "RUN_ID" && value === "$GENERATED_RUN_ID"))) errors.push(`environmentBindings.${phase}[${index}].values.${name} may not use an ambient-value sentinel.`);
+        if (typeof value === "string" && value.startsWith("$") && !((name === "PLAN_FINGERPRINT" && ["$COMPUTED_PLAN_FINGERPRINT", ...(plan.schemaVersion === 1 ? ["$APPROVED_PLAN_FINGERPRINT"] : [])].includes(value)) || (name === "RUN_ID" && value === "$GENERATED_RUN_ID"))) errors.push(`environmentBindings.${phase}[${index}].values.${name} may not use an ambient-value sentinel.`);
       }
       validateSerializedPayloads(entry.values, errors, `environmentBindings.${phase}[${index}].values`);
-      if (phase !== "report") validatePhaseScenario(entry.values, phase, plan.workload, errors, `environmentBindings.${phase}[${index}]`);
+      if (phase !== "report") validatePhaseScenario(entry.values, phase, plan.workload, errors, `environmentBindings.${phase}[${index}]`, plan.schemaVersion);
     }
     rejectDuplicates(ids, `environmentBindings.${phase}[].id`, errors);
   }
@@ -392,6 +401,7 @@ function validateBindingCase(entry, phase, index, plan, errors) {
     const approvedHost = addressHost(plan.target.address, plan.protocol);
     if (values.APPROVED_CONTAINER_HOST?.toLowerCase() !== approvedHost) errors.push(`${label}.values.APPROVED_CONTAINER_HOST must match the approved container address host (the service name or inspected private IP).`);
   }
+  if (plan.target?.locality === "remote" && values.APPROVED_REMOTE_HOST?.toLowerCase() !== addressHost(plan.target.address, plan.protocol)) errors.push(`${label}.values.APPROVED_REMOTE_HOST must match the remote address host.`);
   if (composite) {
     const tokenDeclarations = (plan.cases || []).filter((candidate) => candidate.secretEnvironmentVariables?.includes("AUTH_TOKEN")).length;
     if (values.AUTH_MODE === "bearer" && tokenDeclarations !== plan.cases?.length) errors.push(`${label} uses bearer authentication but not every composite case declares AUTH_TOKEN.`);
@@ -426,9 +436,9 @@ function validateSerializedPayloads(values, errors, label) {
   }
 }
 
-function validatePhaseScenario(values, phase, workload, errors, label) {
+function validatePhaseScenario(values, phase, workload, errors, label, version) {
   if (!isObject(values)) return;
-  if (values.PLAN_FINGERPRINT !== "$APPROVED_PLAN_FINGERPRINT") errors.push(`${label}.values.PLAN_FINGERPRINT must use $APPROVED_PLAN_FINGERPRINT.`);
+  if (values.PLAN_FINGERPRINT !== "$COMPUTED_PLAN_FINGERPRINT" && !(version === 1 && values.PLAN_FINGERPRINT === "$APPROVED_PLAN_FINGERPRINT")) errors.push(`${label}.values.PLAN_FINGERPRINT must use $COMPUTED_PLAN_FINGERPRINT.`);
   if (values.RUN_ID !== "$GENERATED_RUN_ID") errors.push(`${label}.values.RUN_ID must use $GENERATED_RUN_ID.`);
   let scenario;
   try {
@@ -490,20 +500,21 @@ function validateBindingCoverage(bindings, plan, errors) {
       if (run.length !== 1) errors.push(`Case ${candidate.id} must have exactly one run binding for repetition ${repetition}.`);
     }
     if (smoke[0]) for (const run of bindings.run.filter((entry) => entry?.caseId === candidate.id)) {
-      const phaseSpecific = new Set(["EXECUTOR", "SCENARIO_CONFIG", "SCENARIO_NAME", "RUN_ID", "K6_RESULTS_DIR", "SAFETY_DELAY_ABORT_EVAL"]);
+      const phaseSpecific = new Set(["EXECUTOR", "SCENARIO_CONFIG", "SCENARIO_NAME", "RUN_ID", "K6_RESULTS_DIR", "SAFETY_DELAY_ABORT_EVAL", "MAX_REQUESTS", "MAX_RECORDS", "MAX_CONCURRENCY", "MAX_DURATION_SECONDS"]);
       for (const name of Object.keys(smoke[0].values || {})) if (!phaseSpecific.has(name) && name in (run.values || {}) && smoke[0].values[name] !== run.values[name]) errors.push(`Smoke/run binding drift for case ${candidate.id} immutable variable ${name}.`);
     }
   }
 }
 
-function validateCommands(commands, environmentVariables, environmentBindings, secretEnvironmentVariables, cases, generatedFiles, errors) {
+function validateCommands(commands, environmentVariables, environmentBindings, secretEnvironmentVariables, cases, generatedFiles, errors, version) {
   if (!isObject(commands)) {
     errors.push("commands must be an object.");
     return;
   }
-  const declared = new Set([...(Array.isArray(environmentVariables) ? environmentVariables : []), ...(Array.isArray(secretEnvironmentVariables) ? secretEnvironmentVariables : []), "APPROVED_PLAN_FINGERPRINT", "GENERATED_RUN_ID"]);
+  const declared = new Set([...(Array.isArray(environmentVariables) ? environmentVariables : []), ...(Array.isArray(secretEnvironmentVariables) ? secretEnvironmentVariables : []), "COMPUTED_PLAN_FINGERPRINT", "GENERATED_RUN_ID"]);
+  if (version === 1) declared.add("APPROVED_PLAN_FINGERPRINT");
   const secrets = new Set(Array.isArray(secretEnvironmentVariables) ? secretEnvironmentVariables : []);
-  for (const key of ["start", "smoke", "run", "report", "cleanup"]) {
+  for (const key of ["start", "smoke", "run", "report", "cleanup", ...(commands.preflight !== undefined ? ["preflight"] : [])]) {
     requireCommandList(commands, key, errors);
     if (!Array.isArray(commands[key])) continue;
     for (const command of commands[key]) {

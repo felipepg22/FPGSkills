@@ -1,11 +1,11 @@
 # Cross-platform execution
 
-Execute only the approved fingerprint and keep raw output out of the coordinating context.
+Execute only phases selected through [authorization.md](authorization.md) and keep raw output out of the coordinating context.
 
 ## Preflight
 
-1. Resolve `PERFORMANCE_TESTING_SKILL_ROOT` to the absolute directory containing the installed `SKILL.md`. Re-run `$PERFORMANCE_TESTING_SKILL_ROOT/scripts/validate-plan.mjs` with the JSON and Markdown paths, match the approved fingerprint, verify every generated executable hash, and bind the exact approved non-secret environment values. Only declared secret values may come from the ambient environment.
-2. Confirm the application revision, dirty state, configuration profile, target, local dependencies, and tool versions still match the plan.
+1. Resolve `PERFORMANCE_TESTING_SKILL_ROOT` to the installed skill directory. Re-run `scripts/validate-plan.mjs` with JSON and Markdown paths and `scripts/authorize-plan.mjs` with the authorization and fresh request records. Verify every executable hash and bind exact approved values. Supply the internally computed fingerprint through `COMPUTED_PLAN_FINGERPRINT`; secrets remain declared ambient references.
+2. Confirm revision, dirty state, configuration, identity, target/resolved destinations, dependencies, preconditions, accumulated data, and tools still match. Remote probes require an already approved preflight phase.
 3. Run `k6 version`. Use an approved installed binary or pinned local container; do not install or silently substitute versions.
 4. Create the approved `.artifacts/<run-id>/` directory and verify secret values are absent from generated files.
 5. Start only listed local services and confirm health before smoke testing. Pull only exact version-or-digest images listed in the approved `downloads`; an absent unlisted prerequisite blocks execution.
@@ -16,7 +16,7 @@ For the k6 dashboard, use the approved local bind address and self-contained HTM
 
 Give each executor only:
 
-- Approved plan path and fingerprint.
+- Plan path, authorization and request records, selected phase IDs, and internal fingerprint.
 - Assigned case or campaign.
 - Generated test and artifact paths.
 - Exact command plus its one-to-one phase binding entry; secret environment-variable names remain unresolved.
@@ -43,4 +43,4 @@ The k6 test itself must remain platform-neutral. Use normalized relative paths, 
 
 Quarantine a case whose functional smoke test fails. Continue independent whole-application cases, but mark coverage incomplete. Abort the campaign for shared setup, application health, authentication, schema, locality, or safety-stop failures.
 
-Always stop services started by the workflow. Stop and remove the temporary Grafana/Prometheus containers and network while preserving named volumes. Removing volumes, modifying unrelated services, or deleting user artifacts requires separate approval.
+Stop workflow-owned services through their disclosed lifecycle. Attempt separately approved business cleanup even after failures, within its original bounds; otherwise report retained residue. Stop/remove temporary Grafana/Prometheus containers and network while preserving volumes. Removing volumes, changing unrelated services, or deleting user artifacts requires separate approval.

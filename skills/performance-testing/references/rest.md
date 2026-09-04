@@ -12,9 +12,9 @@ Adapt the copied file rather than generating an unrelated structure. Keep target
 
 ## Prove safe behavior
 
-Trace each candidate through route registration, handler, service, and tests. GET, HEAD, and OPTIONS are candidates, not proof. Exclude operations that update access time, enqueue work, invalidate caches with externally visible consequences, write audits beyond the approved authentication exception, or call writable remote dependencies.
+Trace each candidate through route registration, handler, service, and tests. GET, HEAD, and OPTIONS are not proof of read-only behavior. Disclose writes, audits, queueing, cache effects, and remote dependencies under the plan-and-safety contract; include requested bounded mutations for approval.
 
-For journeys, prove every step read-only. Do not drop a mutating step to make a journey appear safe.
+For journeys, account for every step's effects. Adapt the GET example to the requested methods, bodies, correlations, and checks. Keep the execution guard before each request and disable redirects. Do not silently drop mutating steps.
 
 ## Build meaningful checks
 
@@ -22,12 +22,12 @@ Before load, validate status, content type, required response shape, domain inva
 
 Tag every request with stable `case`, `operation`, and `scenario` names so reports expose per-operation and per-scenario metrics. Keep dynamic identifiers out of tag values to avoid cardinality explosions.
 
-Use repository fixtures, seeds, examples, or existing integration-test values. When safe data cannot be found, ask the user rather than calling a mutating setup endpoint.
+Use repository fixtures, seeds, examples, or existing integration-test values. Disclose needed mutating setup as an approvable bounded phase before calling it.
 
 Reference credentials by environment-variable name. Redact authorization, cookies, and sensitive query values from console output and summaries.
 
-For correlation, extract only required response values, assert they exist, and pass them to later read-only steps. Add realistic think time only when supplied or approved in the workload plan.
+For correlation, extract only required response values, assert they exist, and pass them to later approved steps. Add realistic think time only when supplied or approved in the workload plan.
 
 ## Validate
 
-Run a one-VU, one-iteration smoke test against the approved local target. Confirm all checks pass, operation tags appear, expected metrics exist, and no unapproved business writes or writable remote calls occurred. The bounded local authentication-session exception remains allowed. A failing case is quarantined; shared authentication, health, or locality failure aborts the campaign.
+Run a one-VU, one-iteration smoke only when that phase is approved. Confirm checks, operation tags, metrics, and observed effects match the plan. A failing case is quarantined; shared authentication, health, or environment failure aborts the campaign.

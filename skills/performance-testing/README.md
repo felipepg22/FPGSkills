@@ -1,8 +1,8 @@
 # Performance Testing
 
-Performance Testing plans, generates, executes, analyzes, and reports local REST/HTTP and gRPC performance tests with free local tooling. It can target an endpoint, a protocol-level user journey, or a risk-ranked representative slice of an application.
+Performance Testing plans, generates, executes, analyzes, and reports REST/HTTP and gRPC performance tests using local tooling against local or approved remote non-production systems. It can target an endpoint, a protocol-level user journey, or a representative application portfolio.
 
-The skill inspects repository evidence before proposing cases, excludes mutating operations and journeys, generates and hashes the executable tests, and then writes an execution plan under `docs/performance-tests/`. No smoke or load run starts until the user explicitly approves that plan and its fingerprint. Execution uses subagents when available and falls back to the parent agent when delegation is unavailable.
+The skill includes requested mutations and complete journeys, discloses effects and bounds, and writes executable tests and a plan under `docs/performance-tests/`. Approve the whole plan or selected cases/phases in ordinary language; fingerprints remain internal. Approval persists for unlimited user-requested reruns while execution scope and environment remain unchanged. Cleanup is separately selectable. Execution uses subagents when available and otherwise the parent agent.
 
 ## Install
 
@@ -30,7 +30,7 @@ After installation, ask your agent to performance-test a local REST/HTTP or gRPC
 
 ## Scope and output
 
-Version 1 supports REST/HTTP and unary, server-streaming, client-streaming, and bidirectional gRPC. GraphQL is deferred to version 2. The skill does not run against remote or production targets, and it excludes browser-experience testing, security testing, microbenchmarks, profiling-only work, and mutating operations.
+Version 2 plans support REST/HTTP and unary, server-streaming, client-streaming, and bidirectional gRPC, including bounded approved mutations. Remote non-production scope requires explicit attestation and approval; production remains excluded. Other exclusions are GraphQL, browser-experience testing, security testing, microbenchmarks, profiling-only work, unbounded writes, destructive schema operations, irreversible deletion without recovery evidence, billable third-party effects, and unidentified targets/dependencies. Legacy version 1 plans remain readable and validatable; upgrade to version 2 for reusable authorization.
 
 Execution and resource-collection guidance covers macOS, Linux, and Windows.
 
