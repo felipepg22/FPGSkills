@@ -1,4 +1,4 @@
-import { lstat, mkdir, mkdtemp, readFile, rm } from "node:fs/promises";
+import { lstat, mkdir, mkdtemp, readdir, readFile, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import process from "node:process";
@@ -16,6 +16,30 @@ const expectedSkills = [
 const agentSnapshot = JSON.parse(
   await readFile(new URL("./skills-cli-1.5.23-agents.json", import.meta.url), "utf8"),
 );
+
+async function discoverInstalledSkills(root) {
+  const installed = new Map(expectedSkills.map((skill) => [skill, new Map()]));
+  const visit = async (directory) => {
+    for (const entry of await readdir(directory, { withFileTypes: true })) {
+      const entryPath = path.join(directory, entry.name);
+      if (entry.isDirectory()) {
+        if (expectedSkills.includes(entry.name)) {
+          const skillFile = path.join(entryPath, "SKILL.md");
+          try {
+            await lstat(skillFile);
+            installed.get(entry.name).set(path.dirname(entryPath), skillFile);
+            continue;
+          } catch {
+            // Continue walking when a directory happens to share a skill name.
+          }
+        }
+        await visit(entryPath);
+      }
+    }
+  };
+  await visit(root);
+  return installed;
+}
 
 if (!new Set(["copy", "symlink"]).has(mode)) {
   throw new Error(`Unknown install mode: ${mode}`);
@@ -74,10 +98,28 @@ try {
     );
   }
 
-  for (const [agent, destination] of Object.entries(agentSnapshot)) {
+  const installedSkills = cliVersion === "latest"
+    ? await discoverInstalledSkills(installRoot)
+    : new Map();
+  const latestDestinations = cliVersion === "latest"
+    ? new Set(expectedSkills.flatMap((skill) => [...installedSkills.get(skill).keys()]))
+    : new Set();
+  if (cliVersion === "latest" && latestDestinations.size === 0) {
+    throw new Error("Latest CLI installed no discoverable skill destinations");
+  }
+
+  const destinations = cliVersion === "latest"
+    ? [...latestDestinations].map((destination) => [destination, path.relative(installRoot, destination)])
+    : Object.entries(agentSnapshot).map(([agent, destination]) => [path.join(installRoot, destination), agent]);
+  for (const [destinationPath, agent] of destinations) {
     for (const skill of expectedSkills) {
       const source = await readFile(path.join(repoRoot, "skills", skill, "SKILL.md"), "utf8");
-      const installedPath = path.join(installRoot, destination, skill, "SKILL.md");
+      const installedPath = cliVersion === "latest"
+        ? installedSkills.get(skill).get(destinationPath)
+        : path.join(destinationPath, skill, "SKILL.md");
+      if (!installedPath) {
+        throw new Error(`Latest CLI destination is missing ${skill}: ${destinationPath}`);
+      }
       let installed;
       try {
         installed = await readFile(installedPath, "utf8");
@@ -85,7 +127,7 @@ try {
         throw new Error(`${agent} destination is missing ${skill}: ${installedPath}`, { cause: error });
       }
       // Eve normalizes frontmatter for its subagent format; every other target preserves the file.
-      if (agent === "eve") {
+      if (agent === "eve" || (cliVersion === "latest" && path.relative(installRoot, destinationPath) === "agent/skills")) {
         const heading = source.match(/^# .+$/m)?.[0];
         if (!heading || !installed.includes(heading)) {
           throw new Error(`Eve-normalized payload does not match ${skill}`);
@@ -97,7 +139,9 @@ try {
   }
 
   if (mode === "symlink") {
-    const destinations = new Set(Object.values(agentSnapshot));
+    const destinations = cliVersion === "latest"
+      ? new Set([...latestDestinations].map((destination) => path.relative(installRoot, destination)))
+      : new Set(Object.values(agentSnapshot));
     destinations.delete(".agents/skills");
     destinations.delete("agent/skills"); // Eve materializes normalized subagent copies.
     for (const destination of destinations) {
@@ -113,7 +157,10 @@ try {
       if (!(await lstat(eveRoot)).isDirectory()) throw new Error(`Expected Eve copy: ${skill}`);
     }
   } else {
-    for (const destination of new Set(Object.values(agentSnapshot))) {
+    const copyDestinations = cliVersion === "latest"
+      ? new Set([...latestDestinations].map((destination) => path.relative(installRoot, destination)))
+      : new Set(Object.values(agentSnapshot));
+    for (const destination of copyDestinations) {
       for (const skill of expectedSkills) {
         const installedRoot = path.join(installRoot, destination, skill);
         const installedStat = await lstat(installedRoot);
