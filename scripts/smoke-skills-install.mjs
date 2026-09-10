@@ -65,7 +65,10 @@ try {
     throw new Error(`${runner} install failed (${result.status}):\n${output}${launchError}`);
   }
   const reportedAgentCount = Number(output.match(/Installing to all (\d+) agents/)?.[1]);
-  if (reportedAgentCount !== Object.keys(agentSnapshot).length) {
+  if (!Number.isInteger(reportedAgentCount) || reportedAgentCount < 1) {
+    throw new Error(`CLI did not report its installed-agent count:\n${output}`);
+  }
+  if (cliVersion !== "latest" && reportedAgentCount !== Object.keys(agentSnapshot).length) {
     throw new Error(
       `CLI reported ${reportedAgentCount || "no"} agents; pinned snapshot has ${Object.keys(agentSnapshot).length}`,
     );
