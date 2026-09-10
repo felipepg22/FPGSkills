@@ -19,7 +19,7 @@
     "version": { "type": "string", "pattern": "^\\d+\\.\\d+\\.\\d+$" },
     "description": { "type": "string", "minLength": 1 },
     "manualInvocationOnly": { "const": true },
-    "defaultModel": { "const": "inherit" },
+    "defaultModel": { "const": "cheap" },
     "targets": {
       "type": "array",
       "uniqueItems": true,

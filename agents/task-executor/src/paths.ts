@@ -16,6 +16,14 @@ export async function loadPrompt(): Promise<string> {
   return (await readFile(path.join(packageRoot, "core", "prompt.md"), "utf8")).trimEnd();
 }
 
+export async function loadCaller(): Promise<string> {
+  return readFile(path.join(packageRoot, "core", "caller.md"), "utf8");
+}
+
+export function callerDirectory(target: Exclude<TargetId, "generic">, scope: InstallScope, project?: string): string {
+  return path.join(path.dirname(adapterDirectory(target, scope, project)), "skills", "task-executor-routing");
+}
+
 export const TARGET_DIRECTORIES: Record<Exclude<TargetId, "generic">, { local: string; global: string[] }> = {
   codex: {
     local: ".codex/agents",

@@ -1,0 +1,49 @@
+{
+  "schemaVersion": 1,
+  "target": "cursor",
+  "defaultProfile": "luna",
+  "availability": "Discover through the session launch mechanism; configured bindings alone are unverified.",
+  "effortControl": "adapter requests explicit effort when configured",
+  "candidates": [
+    {
+      "name": "luna",
+      "model": "gpt-5.6-luna",
+      "costRank": 1,
+      "cheap": true,
+      "capability": "Implement focused tasks whose design and acceptance criteria are already specified.",
+      "reasoningEffort": "max",
+      "agent": "task-executor",
+      "definitionFile": "task-executor.md"
+    },
+    {
+      "name": "terra",
+      "model": "gpt-5.6-terra",
+      "costRank": 2,
+      "cheap": false,
+      "capability": "Resolve implementation failures involving interactions across components.",
+      "reasoningEffort": "medium",
+      "agent": "task-executor-terra",
+      "definitionFile": "task-executor-terra.md"
+    },
+    {
+      "name": "sol",
+      "model": "gpt-5.6-sol",
+      "costRank": 3,
+      "cheap": false,
+      "capability": "Handle difficult implementation reasoning when cheaper candidates lack a demonstrated needed capability.",
+      "reasoningEffort": "medium",
+      "agent": "task-executor-sol",
+      "definitionFile": "task-executor-sol.md"
+    },
+    {
+      "name": "astra",
+      "model": "gpt-6-astra",
+      "costRank": 4,
+      "cheap": false,
+      "capability": "Handle exceptional complexity only with evidence ruling out cheaper suitable candidates.",
+      "reasoningEffort": "medium",
+      "agent": "task-executor-astra",
+      "definitionFile": "task-executor-astra.md"
+    }
+  ]
+}

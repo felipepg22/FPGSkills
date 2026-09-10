@@ -3,13 +3,17 @@ import path from "node:path";
 import {
   adapterName,
   adapterPath,
+  adapterDirectory,
+  callerDirectory,
+  loadCaller,
   installationRoot,
   loadMetadata,
   loadPrompt,
   manifestPath,
 } from "./paths.js";
 import { checksum, fileChecksum, readManifest, writeManifest } from "./manifest.js";
-import { renderAdapter } from "./render.js";
+import { targetArtifacts, type ArtifactPlan } from "./artifacts.js";
+import { loadPolicyOverrides, policyFor } from "./model-policy.js";
 import type { InstallScope, ManifestArtifact, ModelProfile, TargetId } from "./types.js";
 
 const PACKAGE_NAME = "@fpgskills/task-executor";
@@ -20,6 +24,7 @@ export interface InstallOptions {
   project?: string;
   profiles: ModelProfile[];
   output?: string;
+  policy?: string;
   force?: boolean;
 }
 
@@ -35,63 +40,56 @@ export interface InstallationPreview {
   path: string;
 }
 
-export async function previewInstall(options: InstallOptions): Promise<InstallationPreview[]> {
+async function planInstall(options: InstallOptions): Promise<ArtifactPlan[]> {
+  if (options.targets.length === 0) throw new Error("At least one target is required.");
   const metadata = await loadMetadata();
-  const previews: InstallationPreview[] = [];
-
-  for (const target of options.targets) {
-    const profiles: Array<ModelProfile | undefined> = target === "generic" ? [undefined] : [undefined, ...options.profiles];
-    for (const profile of profiles) {
-      previews.push({
-        target,
-        profile: profile?.name ?? "inherit",
-        path: resolveDestination(target, options, metadata.id, profile?.name),
-      });
-    }
+  const prompt = await loadPrompt();
+  const caller = await loadCaller();
+  const overrides = await loadPolicyOverrides(options.policy);
+  const plans: ArtifactPlan[] = [];
+  for (const target of new Set(options.targets)) {
+    const basePath = resolveDestination(target, options, metadata.id);
+    const agentDir = target === "generic" ? path.dirname(basePath) : adapterDirectory(target, options.scope, options.project);
+    const skillDir = target === "generic" ? path.join(agentDir, "skills", "task-executor-routing") : callerDirectory(target, options.scope, options.project);
+    plans.push(...targetArtifacts({ metadata, prompt, caller, target, policy: policyFor(target, overrides), profiles: options.profiles,
+      agentDirectory: agentDir, skillDirectory: skillDir, basePath,
+      projectRoot: options.scope === "local" ? installationRoot(options.scope, options.project) : undefined,
+    }).map((plan) => ({ ...plan, policyOverride: overrides[target] !== undefined })));
   }
+  const destinations = new Set<string>();
+  for (const plan of plans) {
+    assertWithinRoot(installationRoot(options.scope, options.project), plan.destination);
+    if (destinations.has(plan.destination)) throw new Error(`Multiple artifacts target the same path: ${plan.destination}`);
+    destinations.add(plan.destination);
+  }
+  return plans;
+}
 
-  return previews;
+export async function previewInstall(options: InstallOptions): Promise<InstallationPreview[]> {
+  return (await planInstall(options)).map((plan) => ({ target: plan.target, profile: plan.profile, path: plan.destination }));
 }
 
 export async function install(options: InstallOptions): Promise<OperationResult[]> {
   const metadata = await loadMetadata();
-  const prompt = await loadPrompt();
   const root = installationRoot(options.scope, options.project);
   const ownershipPath = manifestPath(options.scope, options.project);
   const manifest = await readManifest(ownershipPath);
   const results: OperationResult[] = [];
-  const planned: Array<{
-    target: TargetId;
-    profile?: ModelProfile;
-    destination: string;
-    content: string;
-    nextChecksum: string;
-    manifestRelativePath: string;
-    currentChecksum?: string;
-  }> = [];
-
-  for (const target of options.targets) {
-    const profiles: Array<ModelProfile | undefined> = target === "generic" ? [undefined] : [undefined, ...options.profiles];
-    for (const profile of profiles) {
-      const destination = resolveDestination(target, options, metadata.id, profile?.name);
-      assertWithinRoot(root, destination);
-      const content = renderAdapter({ metadata, prompt, target, profile });
-      const nextChecksum = checksum(content);
-      const manifestRelativePath = toManifestPath(root, destination);
-      const existingEntry = manifest.artifacts.find(
-        (artifact) => artifact.package === PACKAGE_NAME && artifact.path === manifestRelativePath,
-      );
-      const currentChecksum = await fileChecksum(destination);
-
-      if (currentChecksum && currentChecksum !== nextChecksum) {
-        const isOwnedAndUnmodified = existingEntry?.checksum === currentChecksum;
-        if (!isOwnedAndUnmodified && !options.force) {
-          throw new Error(`Refusing to overwrite modified or unowned file: ${destination}\nRe-run with --force after reviewing it.`);
-        }
-      }
-
-      planned.push({ target, profile, destination, content, nextChecksum, manifestRelativePath, currentChecksum });
+  const planned: Array<ArtifactPlan & { nextChecksum: string; manifestRelativePath: string; currentChecksum?: string }> = [];
+  for (const plan of await planInstall(options)) {
+    const nextChecksum = checksum(plan.content);
+    const manifestRelativePath = toManifestPath(root, plan.destination);
+    const existingEntry = manifest.artifacts.find((artifact) => artifact.package === PACKAGE_NAME && artifact.path === manifestRelativePath);
+    const currentChecksum = await fileChecksum(plan.destination);
+    if (currentChecksum && currentChecksum !== nextChecksum && existingEntry && plan.kind === "agent"
+      && plan.profile !== "default" && !options.force && !plan.policyOverride && !options.profiles.some((profile) => profile.name === plan.profile)
+      && (existingEntry.model !== plan.model || existingEntry.reasoningEffort !== plan.reasoningEffort)) {
+      throw new Error(`Preserving existing named profile settings: ${plan.destination}\nUse --policy with matching settings or different candidate names; --force explicitly replaces it.`);
     }
+    if (currentChecksum && currentChecksum !== nextChecksum && existingEntry?.checksum !== currentChecksum && !options.force) {
+      throw new Error(`Refusing to overwrite modified or unowned file: ${plan.destination}\nRe-run with --force after reviewing it.`);
+    }
+    planned.push({ ...plan, nextChecksum, manifestRelativePath, currentChecksum });
   }
 
   for (const plan of planned) {
@@ -102,7 +100,10 @@ export async function install(options: InstallOptions): Promise<OperationResult[
       agent: metadata.id,
       target: plan.target,
       scope: options.scope,
-      profile: plan.profile?.name ?? "inherit",
+      profile: plan.profile,
+      kind: plan.kind,
+      ...(plan.model ? { model: plan.model } : {}),
+      ...(plan.reasoningEffort ? { reasoningEffort: plan.reasoningEffort } : {}),
       version: metadata.version,
       path: plan.manifestRelativePath,
       checksum: plan.nextChecksum,

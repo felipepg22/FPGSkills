@@ -25,6 +25,8 @@ test("parses scripted installation with repeated profiles", () => {
 
 test("rejects reserved or malformed profile names", () => {
   assert.throws(() => parseProfile("inherit=model"));
+  assert.throws(() => parseProfile("default=model"));
+  assert.throws(() => parseProfileEffort("default=max"));
   assert.throws(() => parseProfile("Bad Name=model"));
   assert.throws(() => parseProfile("missing-model="));
 });

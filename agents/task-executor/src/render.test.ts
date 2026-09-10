@@ -9,7 +9,7 @@ const metadata: AgentMetadata = {
   version: "1.0.0",
   description: "Invoke only when explicitly requested.",
   manualInvocationOnly: true,
-  defaultModel: "inherit",
+  defaultModel: "cheap",
   targets: ["codex", "opencode", "cursor", "claude-code", "antigravity", "generic"],
 };
 

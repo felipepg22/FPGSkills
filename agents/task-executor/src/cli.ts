@@ -22,7 +22,8 @@ Options:
   --profile <name=model>  Install an additional named model profile; repeatable
   --profile-effort <name=level>
                           Set a profile reasoning effort; repeatable
-  --output <path>         Required destination file or directory for generic Markdown
+  --policy <path>         JSON overrides keyed by target (defaultProfile and candidates)
+  --output <path>         Generic destination; installs a caller skill and shortlist alongside it
   --force                 Overwrite conflicts or remove modified owned adapters
   --json                  JSON output for status
   --help                  Show this help

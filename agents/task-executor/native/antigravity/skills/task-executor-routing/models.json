@@ -1,0 +1,27 @@
+{
+  "schemaVersion": 1,
+  "target": "antigravity",
+  "defaultProfile": "flash",
+  "availability": "Discover through the session launch mechanism; configured bindings alone are unverified.",
+  "effortControl": "host-controlled; adapter does not emit effort",
+  "candidates": [
+    {
+      "name": "flash",
+      "model": "flash",
+      "costRank": 1,
+      "cheap": true,
+      "capability": "Focused implementation from complete specs.",
+      "agent": "task-executor",
+      "definitionFile": "task-executor.md"
+    },
+    {
+      "name": "pro",
+      "model": "pro",
+      "costRank": 2,
+      "cheap": false,
+      "capability": "Implementation failures needing stronger reasoning.",
+      "agent": "task-executor-pro",
+      "definitionFile": "task-executor-pro.md"
+    }
+  ]
+}

@@ -1,0 +1,36 @@
+{
+  "schemaVersion": 1,
+  "target": "claude-code",
+  "defaultProfile": "haiku",
+  "availability": "Discover through the session launch mechanism; configured bindings alone are unverified.",
+  "effortControl": "host-controlled; adapter does not emit effort",
+  "candidates": [
+    {
+      "name": "haiku",
+      "model": "haiku",
+      "costRank": 1,
+      "cheap": true,
+      "capability": "Focused implementation from complete specs.",
+      "agent": "task-executor",
+      "definitionFile": "task-executor.md"
+    },
+    {
+      "name": "sonnet",
+      "model": "sonnet",
+      "costRank": 2,
+      "cheap": false,
+      "capability": "Implementation failures needing broader code reasoning.",
+      "agent": "task-executor-sonnet",
+      "definitionFile": "task-executor-sonnet.md"
+    },
+    {
+      "name": "opus",
+      "model": "opus",
+      "costRank": 3,
+      "cheap": false,
+      "capability": "Exceptional reasoning needs demonstrated by failure evidence.",
+      "agent": "task-executor-opus",
+      "definitionFile": "task-executor-opus.md"
+    }
+  ]
+}

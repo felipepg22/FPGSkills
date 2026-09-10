@@ -3,12 +3,12 @@
 FPGSkills is organized by artifact type. Each directory under `skills/` is a
 lean, canonical runtime payload that skills.sh can install directly. Development
 tests and evaluations live outside those payloads. Task Executor remains a
-separately packaged agent because it is not a skill.
+separately packaged agent with a companion caller skill installed by its CLI.
 
 ## Canonical-to-adapter flow
 
 ```text
-agent.json + core/prompt.md
+agent.json + core/prompt.md + core/caller.md + core/models.json
             |
             v
        TypeScript generator
@@ -17,7 +17,7 @@ agent.json + core/prompt.md
 Codex | OpenCode | Cursor | Claude Code | Antigravity | Generic Markdown
 ```
 
-Generated adapters are committed so users can install them manually without Node.js. Validation regenerates them in memory and reports drift.
+Generated adapters, caller skills, and per-target shortlists are committed so users can install complete bundles manually without Node.js. Validation regenerates them in memory and reports drift.
 
 ## Distribution
 

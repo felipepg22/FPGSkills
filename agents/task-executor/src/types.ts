@@ -16,7 +16,7 @@ export interface AgentMetadata {
   version: string;
   description: string;
   manualInvocationOnly: true;
-  defaultModel: "inherit";
+  defaultModel: "cheap";
   targets: TargetId[];
 }
 
@@ -26,6 +26,19 @@ export interface ModelProfile {
   reasoningEffort?: ReasoningEffort;
 }
 
+export interface ModelCandidate extends ModelProfile {
+  costRank: number;
+  capability: string;
+  cheap: boolean;
+}
+
+export interface ModelPolicy {
+  defaultProfile: string;
+  candidates: ModelCandidate[];
+}
+
+export type PolicyOverrides = Partial<Record<TargetId, ModelPolicy>>;
+
 export const REASONING_EFFORTS = ["none", "low", "medium", "high", "xhigh", "max"] as const;
 export type ReasoningEffort = (typeof REASONING_EFFORTS)[number];
 
@@ -34,6 +47,8 @@ export interface RenderOptions {
   prompt: string;
   target: TargetId;
   profile?: ModelProfile;
+  selection?: ModelProfile;
+  callerPath?: string;
 }
 
 export interface ManifestArtifact {
@@ -45,6 +60,9 @@ export interface ManifestArtifact {
   version: string;
   path: string;
   checksum: string;
+  kind?: "agent" | "skill" | "policy";
+  model?: string;
+  reasoningEffort?: ReasoningEffort;
 }
 
 export interface OwnershipManifest {

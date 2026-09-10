@@ -1,0 +1,123 @@
+{
+  "recordedDate": "2026-09-10",
+  "contractVersion": "2.0.0",
+  "executionMechanism": "Codex collaboration subagents with explicit model/effort and no inherited conversation; canonical executor prompt loaded from file. Generated native profiles were not registered in the active session.",
+  "executionTrials": [
+    {
+      "requestedModel": "gpt-5.6-luna",
+      "requestedEffort": "medium",
+      "confirmedBackendModel": null,
+      "agent": "luna_medium_final_trial",
+      "fixture": "fixtures/normalize-jobs",
+      "status": "COMPLETED",
+      "acceptanceTests": {
+        "passed": 5,
+        "failed": 0,
+        "independentlyRerun": true
+      },
+      "correctionUsed": false,
+      "changedFiles": [
+        "src/jobs.mjs"
+      ],
+      "scopeIndependentlyVerified": true,
+      "resultSha256": "c797f623ce8a5873b047c5cef4bae49a83d71d100a8cb728ce6052beea9d22e9",
+      "inputTokens": null,
+      "outputTokens": null,
+      "reasoningTokens": null,
+      "cachedInputTokens": null,
+      "totalUsage": null
+    },
+    {
+      "requestedModel": "gpt-5.6-luna",
+      "requestedEffort": "max",
+      "confirmedBackendModel": null,
+      "agent": "luna_max_final_trial",
+      "fixture": "fixtures/normalize-jobs",
+      "status": "COMPLETED",
+      "acceptanceTests": {
+        "passed": 5,
+        "failed": 0,
+        "independentlyRerun": true
+      },
+      "correctionUsed": false,
+      "changedFiles": [
+        "src/jobs.mjs"
+      ],
+      "scopeIndependentlyVerified": true,
+      "resultSha256": "6ee77420200ca10a0286ce28e468be0ab6fe78e16cb9700cf27d98660d84b056",
+      "inputTokens": null,
+      "outputTokens": null,
+      "reasoningTokens": null,
+      "cachedInputTokens": null,
+      "totalUsage": null
+    }
+  ],
+  "routingForwardTest": {
+    "agent": "routing_forward_test",
+    "mode": "Independent simulation; no dispatches or workspace mutations.",
+    "cases": [
+      {
+        "id": "no-discovery",
+        "action": "launch",
+        "model": "gpt-5.6-luna",
+        "effort": "max",
+        "passed": true
+      },
+      {
+        "id": "empty-list",
+        "action": "blocked",
+        "model": null,
+        "effort": null,
+        "passed": true
+      },
+      {
+        "id": "fixed-role",
+        "action": "launch",
+        "model": "gpt-5.6-luna",
+        "effort": "max",
+        "passed": true
+      },
+      {
+        "id": "correction",
+        "action": "correct",
+        "model": "gpt-5.6-luna",
+        "effort": "max",
+        "passed": true
+      },
+      {
+        "id": "assessed-alternative",
+        "action": "escalate",
+        "model": "gpt-5.6-terra",
+        "effort": "medium",
+        "passed": true
+      },
+      {
+        "id": "missing-requirements",
+        "action": "blocked",
+        "model": null,
+        "effort": null,
+        "passed": true
+      },
+      {
+        "id": "alternative-exhausted",
+        "action": "blocked",
+        "model": null,
+        "effort": null,
+        "passed": true
+      },
+      {
+        "id": "effort-mismatch",
+        "action": "blocked",
+        "model": null,
+        "effort": null,
+        "passed": true
+      }
+    ]
+  },
+  "decision": "Retain Luna max as the bundled baseline. Both efforts passed this bounded fixture without a correction, but usage was not exposed, so reduced total usage is unproven.",
+  "limitations": [
+    "One representative executable fixture per effort; not a statistical quality benchmark.",
+    "Actual backend model and token usage were not exposed by the host.",
+    "Non-Codex host execution was not available; adapters are covered by local serialization and installation tests."
+  ]
+}

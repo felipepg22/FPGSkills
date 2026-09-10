@@ -1,5 +1,14 @@
 # Changelog
 
+## 2.0.0
+
+- Replace inherited base models with explicit cheap defaults and configured alternatives across all six adapters.
+- Install a caller skill and per-target shortlist for session discovery, automatic fallback without user prompts, focused handoffs, and assessed escalation.
+- Share one correction allowance and one alternative selection across task attempts; report failure and usage evidence.
+- Add `--policy` target overrides and record model bindings in ownership receipts. Preserve custom files and detect named-profile migration conflicts.
+- Generate complete manual/native bundles and add routing and execution trials. Luna medium/max both passed the initial execution trial; unreported usage prevents promoting medium on claimed savings.
+
+
 ## 1.1.2 — 2026-08-18
 
 ### Fixed

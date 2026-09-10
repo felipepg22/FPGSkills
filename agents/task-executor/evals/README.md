@@ -1,6 +1,6 @@
-# Task Executor smoke evaluations
+# Task Executor evaluations
 
-V1 uses three lightweight manual smoke evaluations. There is no weighted scoring framework and no hosted model workflow.
+Keep the original smoke scenarios below and add the paired execution and caller-policy trials described here. Use isolated workspaces; keep results separate from shipped agent and skill payloads.
 
 For each scenario:
 
@@ -43,3 +43,20 @@ Expected:
 - The pre-existing `notes.txt` edit remains untouched.
 - No test file is created and no Git write occurs.
 - The report is `COMPLETED` with scope evidence.
+
+
+## Paired model and effort trial
+
+Use `fixtures/normalize-jobs`, a complete implementation spec with five acceptance tests and a pre-existing notes file. Copy it to a separate temporary directory for each model/effort. Give each executor the canonical `core/prompt.md`, the exact task reference, its working directory, and an initial-stage handoff with one correction remaining. Use no inherited conversation when the host supports that control.
+
+Compare at least Luna medium and Luna max with the same inputs. Verify tests independently and compare the final tree against the fixture: only `src/jobs.mjs` may change. Record requested and confirmed model/effort separately, acceptance, correction count, changes, and actual input/output/reasoning/cached usage where exposed. Include usage from repairs and alternatives; do not substitute message length or elapsed time for token usage. Preserve `null` for unavailable metrics.
+
+Changing the effort default requires comparable acceptance quality and lower observed total usage on representative tasks. The [recorded Luna trial](results/2026-09-10.json) passed both settings, but usage was unavailable; max remains the baseline. Expand the sample before claiming broader quality or savings. Run the same checks through each target host before production adoption of its bundled suggestion.
+
+## Caller-policy forward test
+
+Give an independent evaluator the generated `task-executor-routing/SKILL.md`, its adjacent `models.json`, and `routing-scenarios.json`. Ask it to apply the skill to each independent simulated state and report action, selected binding, next budget, and justification. Do not show the expectations below until its answer is recorded. No actual dispatch is necessary for these protocol cases.
+
+Check that no-discovery uses explicit Luna without a user prompt; an authoritative empty list blocks; the matching fixed Luna role remains eligible even if the override list contains only Astra; the first correctable failure consumes the single correction; a bounded cross-component failure selects Terra after assessment; missing requirements block; exhausted alternatives block; and an immutable effort mismatch does not masquerade as a matching configuration.
+
+The initial eight-case simulation passed. This tests interpretation of the caller policy, not host enforcement of model selection or runtime retry limits.
