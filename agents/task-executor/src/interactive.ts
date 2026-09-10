@@ -265,13 +265,14 @@ function formatSummary(options: InstallOptions, previews: InstallationPreview[])
   const root = options.scope === "local" ? path.resolve(options.project ?? process.cwd()) : homedir();
   const profiles = options.profiles.length > 0
     ? options.profiles.map((profile) => `${profile.name}${profile.reasoningEffort ? ` (${profile.reasoningEffort})` : ""}`).join(", ")
-    : "inherit only";
+    : "bundled cheap default and assessed alternatives";
   const files = previews.map((entry) => `  ${TARGET_LABELS[entry.target]} (${entry.profile})\n  ${entry.path}`).join("\n");
   return [
     `Scope: ${scope}`,
     `Root: ${root}`,
     `Targets: ${options.targets.map((target) => TARGET_LABELS[target]).join(", ")}`,
     `Profiles: ${profiles}`,
+    `Model policy: ${options.policy ?? "bundled; account availability checked by the caller"}`,
     "",
     "Files:",
     files,
@@ -293,6 +294,7 @@ function toInstallOptions(args: CliArguments): InstallOptions {
     project: args.project,
     profiles: args.profiles,
     output: args.output,
+    policy: args.policy,
     force: args.force,
   };
 }

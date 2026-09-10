@@ -2,10 +2,10 @@
   "$schema": "./agent.schema.json",
   "id": "task-executor",
   "displayName": "Task Executor",
-  "version": "1.1.2",
-  "description": "Task implementation leaf subagent. Invoke only when the user explicitly requests Task Executor and supplies an authoritative task source.",
+  "version": "2.0.0",
+  "description": "Execute one specified task only on explicit user request with an authoritative source. Before dispatch, use task-executor-routing for cheap model selection and bounded retries.",
   "manualInvocationOnly": true,
-  "defaultModel": "inherit",
+  "defaultModel": "cheap",
   "targets": [
     "codex",
     "opencode",

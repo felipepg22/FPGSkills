@@ -15,7 +15,7 @@ FPGSkills is a growing catalog of portable agents and skills for AI coding tools
 
 The catalog currently includes:
 
-- [Task Executor](./agents/task-executor/README.md), a manually invoked leaf subagent that executes one well-specified implementation task in a fresh context.
+- [Task Executor](./agents/task-executor/README.md), a manually invoked leaf subagent that executes one well-specified implementation task with cheap model selection and a focused handoff.
 - [FPG AGENTS.md Writer](./skills/fpg-agents-md-writer/SKILL.md), an evidence-driven skill that audits, proposes, creates, and reorganizes concise repository instructions with task-routed supporting guidelines.
 - [Implementation Spec Writer](./skills/implementation-spec-writer/SKILL.md), a user-invoked skill that creates self-contained, agent-ready code implementation specifications from conversations and source material.
 - [Performance Testing](./skills/performance-testing/SKILL.md), a model-invoked skill that plans, generates, safely executes, analyzes, and reports local k6 tests for REST/HTTP and gRPC applications.
@@ -32,7 +32,7 @@ The installer will guide you through choosing the skills and agents. Add `--glob
 
 Project scope is the default. Commit the generated `skills-lock.json` for reproducible team setup.
 
-Task Executor is an agent, not a skill, and retains its [separate installer and installation guide](./agents/task-executor/README.md#install-with-the-optional-cli).
+Task Executor bundles a leaf agent and companion caller skill, and retains its [separate installer and installation guide](./agents/task-executor/README.md#install-with-the-optional-cli).
 
 The former `@fpgskills/fpg-agents-md-writer`, `@fpgskills/implementation-spec-writer`, and `@fpgskills/performance-testing` npm installers were published at `0.1.0`. They are frozen; new fixes are released only through newer repository tags for skills.sh. Existing users should follow the [migration guide](./docs/migrating-to-skills-sh.md) rather than mixing installer ownership models.
 

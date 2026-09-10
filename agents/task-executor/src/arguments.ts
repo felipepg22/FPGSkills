@@ -1,4 +1,5 @@
 import { REASONING_EFFORTS, TARGET_IDS, type InstallScope, type ModelProfile, type ReasoningEffort, type TargetId } from "./types.js";
+import { validateModel } from "./model-policy.js";
 
 export type Command = "install" | "uninstall" | "status";
 
@@ -9,6 +10,7 @@ export interface CliArguments {
   project?: string;
   profiles: ModelProfile[];
   output?: string;
+  policy?: string;
   force: boolean;
   json: boolean;
   help: boolean;
@@ -70,6 +72,9 @@ export function parseArguments(argv: string[]): CliArguments {
       case "--output":
         result.output = inlineValue ?? requireNext(tokens, ++index, flag);
         break;
+      case "--policy":
+        result.policy = inlineValue ?? requireNext(tokens, ++index, flag);
+        break;
       case "--force":
         result.force = true;
         break;
@@ -101,7 +106,8 @@ export function parseProfile(value: string): ModelProfile {
   }
   const name = value.slice(0, separator);
   const model = value.slice(separator + 1);
-  if (!/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(name) || name === "inherit") {
+  validateModel(model);
+  if (!/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(name) || ["inherit", "default"].includes(name)) {
     throw new Error(`Invalid profile name: ${name}`);
   }
   return { name, model };
@@ -114,7 +120,7 @@ export function parseProfileEffort(value: string): [string, ReasoningEffort] {
   }
   const name = value.slice(0, separator);
   const effort = value.slice(separator + 1);
-  if (!/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(name) || name === "inherit") {
+  if (!/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(name) || ["inherit", "default"].includes(name)) {
     throw new Error(`Invalid profile name: ${name}`);
   }
   if (!REASONING_EFFORTS.includes(effort as ReasoningEffort)) {

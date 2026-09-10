@@ -1,0 +1,195 @@
+{
+  "codex": {
+    "defaultProfile": "luna",
+    "candidates": [
+      {
+        "name": "luna",
+        "model": "gpt-5.6-luna",
+        "costRank": 1,
+        "cheap": true,
+        "capability": "Implement focused tasks whose design and acceptance criteria are already specified.",
+        "reasoningEffort": "max"
+      },
+      {
+        "name": "terra",
+        "model": "gpt-5.6-terra",
+        "costRank": 2,
+        "cheap": false,
+        "capability": "Resolve implementation failures involving interactions across components.",
+        "reasoningEffort": "medium"
+      },
+      {
+        "name": "sol",
+        "model": "gpt-5.6-sol",
+        "costRank": 3,
+        "cheap": false,
+        "capability": "Handle difficult implementation reasoning when cheaper candidates lack a demonstrated needed capability.",
+        "reasoningEffort": "medium"
+      },
+      {
+        "name": "astra",
+        "model": "gpt-6-astra",
+        "costRank": 4,
+        "cheap": false,
+        "capability": "Handle exceptional complexity only with evidence ruling out cheaper suitable candidates.",
+        "reasoningEffort": "medium"
+      }
+    ]
+  },
+  "opencode": {
+    "defaultProfile": "luna",
+    "candidates": [
+      {
+        "name": "luna",
+        "model": "openai/gpt-5.6-luna",
+        "costRank": 1,
+        "cheap": true,
+        "capability": "Implement focused tasks whose design and acceptance criteria are already specified.",
+        "reasoningEffort": "max"
+      },
+      {
+        "name": "terra",
+        "model": "openai/gpt-5.6-terra",
+        "costRank": 2,
+        "cheap": false,
+        "capability": "Resolve implementation failures involving interactions across components.",
+        "reasoningEffort": "medium"
+      },
+      {
+        "name": "sol",
+        "model": "openai/gpt-5.6-sol",
+        "costRank": 3,
+        "cheap": false,
+        "capability": "Handle difficult implementation reasoning when cheaper candidates lack a demonstrated needed capability.",
+        "reasoningEffort": "medium"
+      },
+      {
+        "name": "astra",
+        "model": "openai/gpt-6-astra",
+        "costRank": 4,
+        "cheap": false,
+        "capability": "Handle exceptional complexity only with evidence ruling out cheaper suitable candidates.",
+        "reasoningEffort": "medium"
+      }
+    ]
+  },
+  "cursor": {
+    "defaultProfile": "luna",
+    "candidates": [
+      {
+        "name": "luna",
+        "model": "gpt-5.6-luna",
+        "costRank": 1,
+        "cheap": true,
+        "capability": "Implement focused tasks whose design and acceptance criteria are already specified.",
+        "reasoningEffort": "max"
+      },
+      {
+        "name": "terra",
+        "model": "gpt-5.6-terra",
+        "costRank": 2,
+        "cheap": false,
+        "capability": "Resolve implementation failures involving interactions across components.",
+        "reasoningEffort": "medium"
+      },
+      {
+        "name": "sol",
+        "model": "gpt-5.6-sol",
+        "costRank": 3,
+        "cheap": false,
+        "capability": "Handle difficult implementation reasoning when cheaper candidates lack a demonstrated needed capability.",
+        "reasoningEffort": "medium"
+      },
+      {
+        "name": "astra",
+        "model": "gpt-6-astra",
+        "costRank": 4,
+        "cheap": false,
+        "capability": "Handle exceptional complexity only with evidence ruling out cheaper suitable candidates.",
+        "reasoningEffort": "medium"
+      }
+    ]
+  },
+  "generic": {
+    "defaultProfile": "luna",
+    "candidates": [
+      {
+        "name": "luna",
+        "model": "gpt-5.6-luna",
+        "costRank": 1,
+        "cheap": true,
+        "capability": "Implement focused tasks whose design and acceptance criteria are already specified.",
+        "reasoningEffort": "max"
+      },
+      {
+        "name": "terra",
+        "model": "gpt-5.6-terra",
+        "costRank": 2,
+        "cheap": false,
+        "capability": "Resolve implementation failures involving interactions across components.",
+        "reasoningEffort": "medium"
+      },
+      {
+        "name": "sol",
+        "model": "gpt-5.6-sol",
+        "costRank": 3,
+        "cheap": false,
+        "capability": "Handle difficult implementation reasoning when cheaper candidates lack a demonstrated needed capability.",
+        "reasoningEffort": "medium"
+      },
+      {
+        "name": "astra",
+        "model": "gpt-6-astra",
+        "costRank": 4,
+        "cheap": false,
+        "capability": "Handle exceptional complexity only with evidence ruling out cheaper suitable candidates.",
+        "reasoningEffort": "medium"
+      }
+    ]
+  },
+  "claude-code": {
+    "defaultProfile": "haiku",
+    "candidates": [
+      {
+        "name": "haiku",
+        "model": "haiku",
+        "costRank": 1,
+        "cheap": true,
+        "capability": "Focused implementation from complete specs."
+      },
+      {
+        "name": "sonnet",
+        "model": "sonnet",
+        "costRank": 2,
+        "cheap": false,
+        "capability": "Implementation failures needing broader code reasoning."
+      },
+      {
+        "name": "opus",
+        "model": "opus",
+        "costRank": 3,
+        "cheap": false,
+        "capability": "Exceptional reasoning needs demonstrated by failure evidence."
+      }
+    ]
+  },
+  "antigravity": {
+    "defaultProfile": "flash",
+    "candidates": [
+      {
+        "name": "flash",
+        "model": "flash",
+        "costRank": 1,
+        "cheap": true,
+        "capability": "Focused implementation from complete specs."
+      },
+      {
+        "name": "pro",
+        "model": "pro",
+        "costRank": 2,
+        "cheap": false,
+        "capability": "Implementation failures needing stronger reasoning."
+      }
+    ]
+  }
+}

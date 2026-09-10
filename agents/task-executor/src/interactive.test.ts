@@ -35,7 +35,7 @@ test("guided install selects targets, confirms, and writes the selected adapters
     prompter: prompts,
   });
 
-  assert.equal(results?.length, 2);
+  assert.equal(results?.length, 12);
   assert.match(await readFile(path.join(project, ".codex/agents/task-executor.toml"), "utf8"), /developer_instructions/);
   assert.match(await readFile(path.join(project, ".cursor/agents/task-executor.md"), "utf8"), /Task Executor/);
   assert.deepEqual(prompts.initialTargets, ["codex"]);
@@ -79,7 +79,7 @@ test("generic installation asks for an explicit output path and skips profiles",
     prompter: prompts,
   });
 
-  assert.equal(results?.length, 1);
+  assert.equal(results?.length, 6);
   assert.match(await readFile(path.join(output, "task-executor.md"), "utf8"), /Task Executor/);
   assert.deepEqual(prompts.confirmMessages, ["Proceed with installation?"]);
 });
@@ -113,7 +113,7 @@ test("profile prompts collect validated named models", async () => {
   const prompts = scriptedPrompter({
     targets: ["codex"],
     scope: "global",
-    text: ["luna", "vendor/luna"],
+    text: ["custom", "vendor/luna"],
     efforts: ["max"],
     confirms: [true, false, true],
   });
@@ -128,9 +128,9 @@ test("profile prompts collect validated named models", async () => {
     },
   });
 
-  assert.deepEqual(profiles, [{ name: "luna", model: "vendor/luna", reasoningEffort: "max" }]);
+  assert.deepEqual(profiles, [{ name: "custom", model: "vendor/luna", reasoningEffort: "max" }]);
   assert.match(prompts.notes[0] ?? "", /Scope: Global/);
-  assert.match(prompts.notes[0] ?? "", /Profiles: luna \(max\)/);
+  assert.match(prompts.notes[0] ?? "", /Profiles: custom \(max\)/);
 });
 
 test("prompt cancellation is surfaced without invoking the installer", async () => {

@@ -1,0 +1,136 @@
+[
+  {
+    "id": "no-discovery",
+    "stage": "initial",
+    "task": "Change one specified greeting literal; no ambiguous decisions.",
+    "discovery": null,
+    "launch": "Explicit model and effort overrides supported."
+  },
+  {
+    "id": "empty-list",
+    "stage": "initial",
+    "task": "Change one specified greeting literal.",
+    "discovery": {
+      "overrideModels": [],
+      "registeredRoles": []
+    },
+    "launch": "Explicit overrides supported; list is authoritative."
+  },
+  {
+    "id": "fixed-role",
+    "stage": "initial",
+    "task": "Change one specified greeting literal.",
+    "discovery": {
+      "overrideModels": [
+        {
+          "model": "gpt-6-astra",
+          "efforts": [
+            "medium"
+          ]
+        }
+      ],
+      "registeredRoles": [
+        {
+          "agent": "task-executor",
+          "model": "gpt-5.6-luna",
+          "effort": "max",
+          "immutable": true
+        }
+      ]
+    },
+    "launch": "Supports both mechanisms."
+  },
+  {
+    "id": "correction",
+    "stage": "initial-result",
+    "result": {
+      "status": "BLOCKED",
+      "blocker": "implementation",
+      "failedCondition": "Whitespace is not trimmed.",
+      "correctionUsed": false
+    },
+    "budget": {
+      "correctionRemaining": 1,
+      "alternativeRemaining": 1
+    },
+    "selected": {
+      "model": "gpt-5.6-luna",
+      "effort": "max"
+    }
+  },
+  {
+    "id": "assessed-alternative",
+    "stage": "correction-result",
+    "result": {
+      "status": "BLOCKED",
+      "blocker": "implementation",
+      "failedCondition": "Cross-component cache invalidation test still fails.",
+      "correctionUsed": true
+    },
+    "budget": {
+      "correctionRemaining": 0,
+      "alternativeRemaining": 1
+    },
+    "selected": {
+      "model": "gpt-5.6-luna",
+      "effort": "max"
+    },
+    "discovery": {
+      "overrideModels": [
+        "gpt-5.6-luna",
+        "gpt-5.6-terra",
+        "gpt-5.6-sol",
+        "gpt-6-astra"
+      ],
+      "efforts": [
+        "max",
+        "medium"
+      ]
+    },
+    "assessmentEvidence": "Failure is a bounded interaction between two components; no evidence of exceptional reasoning requirements. The design and environment are complete."
+  },
+  {
+    "id": "missing-requirements",
+    "stage": "initial-result",
+    "result": {
+      "status": "BLOCKED",
+      "blocker": "requirements",
+      "failedCondition": "Spec does not define timeout behavior.",
+      "correctionUsed": false
+    },
+    "budget": {
+      "correctionRemaining": 1,
+      "alternativeRemaining": 1
+    }
+  },
+  {
+    "id": "alternative-exhausted",
+    "stage": "alternative-result",
+    "result": {
+      "status": "BLOCKED",
+      "blocker": "implementation",
+      "failedCondition": "Acceptance test still fails."
+    },
+    "budget": {
+      "correctionRemaining": 0,
+      "alternativeRemaining": 0
+    }
+  },
+  {
+    "id": "effort-mismatch",
+    "stage": "initial",
+    "task": "Change one specified literal.",
+    "discovery": {
+      "overrideModels": [],
+      "registeredRoles": [
+        {
+          "agent": "task-executor",
+          "model": "gpt-5.6-luna",
+          "effort": "medium",
+          "immutable": true
+        }
+      ]
+    },
+    "launch": "Only fixed roles, no overrides. Configured cheap candidate requires max."
+  }
+]
