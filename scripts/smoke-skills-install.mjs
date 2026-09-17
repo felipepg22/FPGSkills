@@ -9,6 +9,7 @@ const cliVersion = process.env.SKILLS_CLI_VERSION ?? "1.5.23";
 const mode = process.argv[2] ?? "copy";
 const runner = process.env.SKILLS_RUNNER ?? "npx";
 const expectedSkills = [
+  "bdd-plan",
   "fpg-agents-md-writer",
   "implementation-spec-writer",
   "performance-testing",
@@ -65,13 +66,33 @@ try {
     throw new Error(`${runner} install failed (${result.status}):\n${output}${launchError}`);
   }
   const reportedAgentCount = Number(output.match(/Installing to all (\d+) agents/)?.[1]);
-  if (reportedAgentCount !== Object.keys(agentSnapshot).length) {
+  const pinnedAgentCount = Object.keys(agentSnapshot).length;
+  const allowsAgentDrift = cliVersion === "latest";
+  if (!reportedAgentCount || (!allowsAgentDrift && reportedAgentCount !== pinnedAgentCount)) {
     throw new Error(
-      `CLI reported ${reportedAgentCount || "no"} agents; pinned snapshot has ${Object.keys(agentSnapshot).length}`,
+      `CLI reported ${reportedAgentCount || "no"} agents; pinned snapshot has ${pinnedAgentCount}`,
     );
   }
+  if (reportedAgentCount !== pinnedAgentCount) {
+    console.warn(`Latest CLI reports ${reportedAgentCount} agents; pinned snapshot lists ${pinnedAgentCount}.`);
+  }
 
+  const activeAgents = [];
   for (const [agent, destination] of Object.entries(agentSnapshot)) {
+    const installedPath = path.join(installRoot, destination, expectedSkills[0], "SKILL.md");
+    try {
+      await readFile(installedPath, "utf8");
+      activeAgents.push([agent, destination]);
+    } catch (error) {
+      if (!allowsAgentDrift || error.code !== "ENOENT") throw error;
+      console.warn(`Latest CLI omitted pinned destination for ${agent}: ${destination}`);
+    }
+  }
+  if (!activeAgents.some(([agent]) => agent === "codex")) {
+    throw new Error("Codex destination is missing");
+  }
+
+  for (const [agent, destination] of activeAgents) {
     for (const skill of expectedSkills) {
       const source = await readFile(path.join(repoRoot, "skills", skill, "SKILL.md"), "utf8");
       const installedPath = path.join(installRoot, destination, skill, "SKILL.md");
@@ -94,7 +115,7 @@ try {
   }
 
   if (mode === "symlink") {
-    const destinations = new Set(Object.values(agentSnapshot));
+    const destinations = new Set(activeAgents.map(([, destination]) => destination));
     destinations.delete(".agents/skills");
     destinations.delete("agent/skills"); // Eve materializes normalized subagent copies.
     for (const destination of destinations) {
@@ -110,7 +131,7 @@ try {
       if (!(await lstat(eveRoot)).isDirectory()) throw new Error(`Expected Eve copy: ${skill}`);
     }
   } else {
-    for (const destination of new Set(Object.values(agentSnapshot))) {
+    for (const destination of new Set(activeAgents.map(([, destination]) => destination))) {
       for (const skill of expectedSkills) {
         const installedRoot = path.join(installRoot, destination, skill);
         const installedStat = await lstat(installedRoot);
@@ -121,7 +142,7 @@ try {
     }
   }
 
-  console.log(`${runner} skills@${cliVersion} ${mode} install passed for all supported agents.`);
+  console.log(`${runner} skills@${cliVersion} ${mode} install passed for ${activeAgents.length} pinned agents.`);
 } finally {
   await rm(installRoot, { recursive: true, force: true });
 }

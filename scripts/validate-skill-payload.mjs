@@ -5,6 +5,7 @@ import process from "node:process";
 const root = path.resolve(process.argv[2] ?? process.cwd());
 const skillsRoot = path.join(root, "skills");
 const expectedSkills = [
+  "bdd-plan",
   "fpg-agents-md-writer",
   "implementation-spec-writer",
   "performance-testing",
