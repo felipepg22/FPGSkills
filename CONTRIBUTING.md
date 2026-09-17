@@ -20,6 +20,8 @@ For Implementation Spec Writer, edit
 `skills/implementation-spec-writer/SKILL.md` and its `references/` files
 directly.
 
+For BDD Plan, edit `skills/bdd-plan/SKILL.md` directly.
+
 For Performance Testing, edit `skills/performance-testing/SKILL.md`, its
 task-loaded `references/`, reusable `assets/`, and deterministic `scripts/`
 directly. Keep generated test artifacts under the target repository's
@@ -38,7 +40,7 @@ node scripts/smoke-skills-install.mjs copy
 
 The payload validator rejects development-only entries and agent-specific
 installation paths. The smoke test uses the repository's pinned skills CLI,
-installs all three payloads for every supported agent in a temporary directory,
+installs all skill payloads for every supported agent in a temporary directory,
 and verifies their contents. On Linux and macOS, also run
 `node scripts/smoke-skills-install.mjs symlink`. Hosted CI runs the required
 cross-platform matrix; `SKILLS_RUNNER=bunx` selects the verified bunx path.

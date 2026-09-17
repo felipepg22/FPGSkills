@@ -9,6 +9,7 @@ const cliVersion = process.env.SKILLS_CLI_VERSION ?? "1.5.23";
 const mode = process.argv[2] ?? "copy";
 const runner = process.env.SKILLS_RUNNER ?? "npx";
 const expectedSkills = [
+  "bdd-plan",
   "fpg-agents-md-writer",
   "implementation-spec-writer",
   "performance-testing",
