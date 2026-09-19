@@ -18,6 +18,7 @@ The catalog currently includes:
 - [Task Executor](./agents/task-executor/README.md), a manually invoked leaf subagent that executes one well-specified implementation task in a fresh context.
 - [BDD Plan](./skills/bdd-plan/SKILL.md), a skill that creates behavior-driven implementation plans with a required post-implementation sub-agent verification task.
 - [FPG AGENTS.md Writer](./skills/fpg-agents-md-writer/SKILL.md), an evidence-driven skill that audits, proposes, creates, and reorganizes concise repository instructions with task-routed supporting guidelines.
+- [FPG Implement](./skills/fpg-implement/SKILL.md), a user-invoked skill that executes concrete tasks directly or through cost-aware, dependency-aware sub-agent orchestration.
 - [Implementation Spec Writer](./skills/implementation-spec-writer/SKILL.md), a user-invoked skill that creates self-contained, agent-ready code implementation specifications from conversations and source material.
 - [Performance Testing](./skills/performance-testing/SKILL.md), a model-invoked skill that plans, generates, safely executes, analyzes, and reports local k6 tests for REST/HTTP and gRPC applications.
 
@@ -45,6 +46,7 @@ agents/                 Reusable subagents
 skills/                 Lean, directly installable skill payloads
   bdd-plan/             Behavior-driven implementation planning
   fpg-agents-md-writer/ Canonical skill and runtime references
+  fpg-implement/        Adaptive execution and sub-agent orchestration
   implementation-spec-writer/ Canonical skill and runtime references
   performance-testing/ Canonical skill, runtime assets, references, and scripts
 packages/               Reserved for proven shared tooling
