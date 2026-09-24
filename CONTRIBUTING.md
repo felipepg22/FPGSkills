@@ -16,6 +16,10 @@ For FPG AGENTS.md Writer, edit `skills/fpg-agents-md-writer/SKILL.md` and its
 `references/` files directly. Its evaluation cases live in
 `evals/fpg-agents-md-writer/`, outside the installable payload.
 
+For FPG Implement, edit `skills/fpg-implement/SKILL.md` directly. Keep its
+adaptive routing provider-neutral, preserve the user's authority boundaries,
+and use the behavioral cases in `evals/fpg-implement/` when behavior changes.
+
 For Implementation Spec Writer, edit
 `skills/implementation-spec-writer/SKILL.md` and its `references/` files
 directly.
