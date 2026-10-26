@@ -1,0 +1,4 @@
+interface:
+  display_name: "FPG Code Review"
+  short_description: "Review code against discovered repository standards"
+  default_prompt: "Use $fpg-code-review to review my changes against applicable repository standards and check for defects."
