@@ -26,6 +26,10 @@ directly.
 
 For BDD Plan, edit `skills/bdd-plan/SKILL.md` directly.
 
+For FPG Code Review, edit `skills/fpg-code-review/SKILL.md` and its
+task-loaded `references/` directly. Behavioral evaluation cases live in
+`evals/fpg-code-review/`, outside the installable payload.
+
 For Performance Testing, edit `skills/performance-testing/SKILL.md`, its
 task-loaded `references/`, reusable `assets/`, and deterministic `scripts/`
 directly. Keep generated test artifacts under the target repository's

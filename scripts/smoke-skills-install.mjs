@@ -11,6 +11,7 @@ const runner = process.env.SKILLS_RUNNER ?? "npx";
 const expectedSkills = [
   "bdd-plan",
   "fpg-agents-md-writer",
+  "fpg-code-review",
   "fpg-implement",
   "implementation-spec-writer",
   "performance-testing",
