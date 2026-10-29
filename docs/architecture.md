@@ -3,7 +3,9 @@
 FPGSkills is organized by artifact type. Each directory under `skills/` is a
 lean, canonical runtime payload that skills.sh can install directly. Development
 tests and evaluations live outside those payloads. Task Executor remains a
-separately packaged agent because it is not a skill.
+separately packaged leaf agent. FPG Implement is a distinct user-invoked skill
+for adaptive direct execution and sub-agent orchestration; it does not alter or
+replace the Task Executor package.
 
 ## Canonical-to-adapter flow
 

@@ -12,6 +12,7 @@ const expectedSkills = [
   "bdd-plan",
   "fpg-agents-md-writer",
   "fpg-code-review",
+  "fpg-implement",
   "implementation-spec-writer",
   "performance-testing",
 ];

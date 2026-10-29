@@ -1,0 +1,6 @@
+interface:
+  display_name: "FPG Implement"
+  short_description: "Execute tasks with adaptive sub-agent orchestration"
+  default_prompt: "Use $fpg-implement to complete this task with proportionate delegation and verification."
+policy:
+  allow_implicit_invocation: false
